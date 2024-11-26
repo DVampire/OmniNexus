@@ -1,0 +1,148 @@
+FROM {{ base_image }}
+
+# Shared environment variables
+ENV POETRY_VIRTUALENVS_PATH=/omninexus/poetry \
+    MAMBA_ROOT_PREFIX=/omninexus/micromamba \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    EDITOR=code \
+    VISUAL=code \
+    GIT_EDITOR="code --wait" \
+    OPENVSCODE_SERVER_ROOT=/omninexus/.openvscode-server
+
+{% macro setup_base_system() %}
+
+# Install base system dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        wget curl sudo apt-utils git \
+        {% if 'ubuntu' in base_image and (base_image.endswith(':latest') or base_image.endswith(':24.04')) %}
+        libgl1 \
+        {% else %}
+        libgl1-mesa-glx \
+        {% endif %}
+        libasound2-plugins libatomic1 curl && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Remove UID 1000 if it's called pn--this fixes the nikolaik image for ubuntu users
+RUN if getent passwd 1000 | grep -q pn; then userdel pn; fi
+
+# Create necessary directories
+RUN mkdir -p /omninexus && \
+    mkdir -p /omninexus/logs && \
+    mkdir -p /omninexus/poetry
+
+{% endmacro %}
+
+{% macro setup_vscode_server() %}
+# Reference:
+# 1. https://github.com/gitpod-io/openvscode-server
+# 2. https://github.com/gitpod-io/openvscode-releases
+
+# Setup VSCode Server
+ARG RELEASE_TAG="openvscode-server-v1.94.2"
+ARG RELEASE_ORG="gitpod-io"
+# ARG USERNAME=openvscode-server
+# ARG USER_UID=1000
+# ARG USER_GID=1000
+
+RUN if [ -z "${RELEASE_TAG}" ]; then \
+        echo "The RELEASE_TAG build arg must be set." >&2 && \
+        exit 1; \
+    fi && \
+    arch=$(uname -m) && \
+    if [ "${arch}" = "x86_64" ]; then \
+        arch="x64"; \
+    elif [ "${arch}" = "aarch64" ]; then \
+        arch="arm64"; \
+    elif [ "${arch}" = "armv7l" ]; then \
+        arch="armhf"; \
+    fi && \
+    wget https://github.com/${RELEASE_ORG}/openvscode-server/releases/download/${RELEASE_TAG}/${RELEASE_TAG}-linux-${arch}.tar.gz && \
+    tar -xzf ${RELEASE_TAG}-linux-${arch}.tar.gz && \
+    mv -f ${RELEASE_TAG}-linux-${arch} ${OPENVSCODE_SERVER_ROOT} && \
+    cp ${OPENVSCODE_SERVER_ROOT}/bin/remote-cli/openvscode-server ${OPENVSCODE_SERVER_ROOT}/bin/remote-cli/code && \
+    rm -f ${RELEASE_TAG}-linux-${arch}.tar.gz
+
+{% endmacro %}
+
+{% macro install_dependencies() %}
+# Install all dependencies
+WORKDIR /omninexus/code
+RUN \
+    /omninexus/micromamba/bin/micromamba config set changeps1 False && \
+    # Configure Poetry and create virtual environment
+    /omninexus/micromamba/bin/micromamba run -n omninexus poetry config virtualenvs.path /omninexus/poetry && \
+    /omninexus/micromamba/bin/micromamba run -n omninexus poetry env use python3.12 && \
+    # Install project dependencies
+    /omninexus/micromamba/bin/micromamba run -n omninexus poetry install --only main,runtime --no-interaction --no-root && \
+    # Update and install additional tools
+    apt-get update && \
+    /omninexus/micromamba/bin/micromamba run -n omninexus poetry run pip install playwright && \
+    /omninexus/micromamba/bin/micromamba run -n omninexus poetry run playwright install --with-deps chromium && \
+    # Set environment variables
+    echo "OH_INTERPRETER_PATH=$(/omninexus/micromamba/bin/micromamba run -n omninexus poetry run python -c "import sys; print(sys.executable)")" >> /etc/environment && \
+    # Clear caches
+    /omninexus/micromamba/bin/micromamba run -n omninexus poetry cache clear --all . && \
+    # Set permissions
+    chmod -R g+rws /omninexus/poetry && \
+    mkdir -p /omninexus/workspace && chmod -R g+rws,o+rw /omninexus/workspace && \
+    # Clean up
+    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
+    /omninexus/micromamba/bin/micromamba clean --all
+
+{% endmacro %}
+
+{% if build_from_scratch %}
+# ================================================================
+# START: Build Runtime Image from Scratch
+# ================================================================
+# This is used in cases where the base image is something more generic like nikolaik/python-nodejs
+# rather than the current omninexus release
+
+{{ setup_base_system() }}
+{{ setup_vscode_server() }}
+
+# Install micromamba
+RUN mkdir -p /omninexus/micromamba/bin && \
+    /bin/bash -c "PREFIX_LOCATION=/omninexus/micromamba BIN_FOLDER=/omninexus/micromamba/bin INIT_YES=no CONDA_FORGE_YES=yes $(curl -L https://micro.mamba.pm/install.sh)" && \
+    /omninexus/micromamba/bin/micromamba config remove channels defaults && \
+    /omninexus/micromamba/bin/micromamba config list
+
+# Create the omninexus virtual environment and install poetry and python
+RUN /omninexus/micromamba/bin/micromamba create -n omninexus -y && \
+    /omninexus/micromamba/bin/micromamba install -n omninexus -c conda-forge poetry python=3.12 -y
+
+# Create a clean omninexus directory including only the pyproject.toml, poetry.lock and omninexus/__init__.py
+RUN \
+    if [ -d /omninexus/code ]; then rm -rf /omninexus/code; fi && \
+    mkdir -p /omninexus/code/omninexus && \
+    touch /omninexus/code/omninexus/__init__.py
+
+COPY ./code/pyproject.toml ./code/poetry.lock /omninexus/code/
+
+{{ install_dependencies() }}
+
+# ================================================================
+# END: Build Runtime Image from Scratch
+# ================================================================
+{% endif %}
+
+# ================================================================
+# Copy Project source files
+# ================================================================
+RUN if [ -d /omninexus/code/omninexus ]; then rm -rf /omninexus/code/omninexus; fi
+COPY ./code/pyproject.toml ./code/poetry.lock /omninexus/code/
+COPY ./code/omninexus /omninexus/code/omninexus
+RUN chmod a+rwx /omninexus/code/omninexus/__init__.py
+
+# ================================================================
+# END: Build from versioned image
+# ================================================================
+{% if build_from_versioned %}
+{{ install_dependencies() }}
+{% endif %}
+
+# Install extra dependencies if specified
+{% if extra_deps %}RUN {{ extra_deps }} {% endif %}
