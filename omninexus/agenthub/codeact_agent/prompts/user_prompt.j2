@@ -1,3 +1,481 @@
 <IMPORTANT>
 * You MUST follow the PEP8 standard for the generated python code.
+* You MUST follow the directory structure outlined below if you need to generate a research project:
+    research_project/                 # Main project directory
+    ├── configs/                      # Directory for configuration files (e.g., YAML, JSON)
+    ├── datasets/                     # Directory for dataset-related code or data files
+    ├── rp/                           # Core package for the research project
+    │   ├── config/                   # Configuration module (e.g., building configurations)
+    │   ├── criterion/                # Custom loss functions or criteria definitions
+    │   ├── data/                     # Data processing or dataset loading utilities
+    │   ├── logger/                   # Logging utilities for tracking experiments
+    │   ├── metric/                   # Evaluation metrics (e.g., accuracy, precision)
+    │   ├── model/                    # Model architectures and related implementations
+    │   ├── optimizer/                # Custom optimizers or optimizer configurations
+    │   ├── scheduler/                # Learning rate scheduler implementations
+    │   ├── trainer/                  # Training loop or trainer classes
+    │   ├── transform/                # Data transformation or augmentation utilities
+    │   ├── utils/                    # General utilities (e.g., file handling, helper functions)
+    │   ├── wandb/                    # Weights and Biases (Wandb) integration for experiment tracking
+    │   ├── __init__.py               # Initialization file for the `rp` package
+    │   └── registry.py               # Module for registering components (e.g., models, metrics)
+    ├── tests/                        # Directory for unit tests and integration tests
+    └── run.py                        # Main script to run the project (e.g., training or evaluation)
+
+* Exmaple
+Generate an image classification research project.
+
+research project
+├── configs
+│   ├── resnet34.py
+├── datasets # ignore it, because it will be provided by the user
+├── rp
+│   ├── config
+│   │   ├── __init__.py
+│   │   └── config.py
+│   ├── criterion
+│   │   ├── __init__.py
+│   │   └── criterion.py
+│   ├── data
+│   │   ├── __init__.py
+│   │   └── dataset.py
+│   ├── logger
+│   │   ├── __init__.py
+│   │   └── logger.py
+│   ├── metric
+│   │   ├── __init__.py
+│   │   └── metric.py
+│   ├── model
+│   │   ├── __init__.py
+│   │   └── resnet.py
+│   ├── optimizer
+│   │   ├── __init__.py
+│   │   └── optimizer.py
+│   ├── scheduler
+│   │   ├── __init__.py
+│   │   └── scheduler.py
+│   ├── trainer
+│   │   ├── __init__.py
+│   │   └── trainer.py
+│   ├── transform
+│   │   ├── __init__.py
+│   │   └── transform.py
+│   ├── utils
+│   │   ├── __init__.py
+│   │   └── utils.py
+│   ├── wandb
+│   │   ├── __init__.py
+│   │   └── wandb.py
+│   ├── __init__.py
+│   └── registry.py
+├── tests
+│   ├── __init__.py
+│   └── test.py
+└── run.py
+
+- The entry point for the project is `run.py`.
+```python
+import argparse
+import os
+
+import torch
+from accelerate import Accelerator, DistributedDataParallelKwargs
+from rp.config import build_config
+from rp.registry import (
+    CRITERION,
+    DATASET,
+    METRIC,
+    MODEL,
+    OPTIMIZER,
+    SCHEDULER,
+    TRAINER,
+    TRANSFORM,
+)
+from rp.utils import assemble_project_path, to_torch_dtype
+from rp.wandb import WandbLogger
+
+
+def get_args_parser():
+    parser = argparse.ArgumentParser(description='Train script')
+    parser.add_argument(
+        '--config',
+        default=os.path.join('configs', 'resnet34.py'),
+        help='config file path',
+    )
+
+    parser.add_argument('--workdir', type=str, default='workdir')
+    parser.add_argument('--tag', type=str, default=None)
+    parser.add_argument('--seed', type=int, default=42)
+    parser.add_argument('--checkpoint_path', type=str, default=None)
+    parser.add_argument('--wandb_path', type=str, default=None)
+    parser.add_argument('--if_remove', action='store_true', default=False)
+
+    parser.add_argument(
+        '--device', default='cuda', help='device to use for training / testing'
+    )
+
+    args = parser.parse_args()
+
+    return args
+
+
+def main(args):
+    # 1. build config
+    config = build_config(assemble_project_path(args.config), args)
+
+    # 2. set dtype
+    dtype = to_torch_dtype(config.dtype)
+
+    # 3. init accelerator
+    ddp_kwargs = DistributedDataParallelKwargs(find_unused_parameters=True)
+    accelerator = Accelerator(
+        cpu=True if args.device == 'cpu' else False, kwargs_handlers=[ddp_kwargs]
+    )
+
+    # 4. get device
+    device = accelerator.device
+
+    # 5. init wandb
+    wandb = WandbLogger(
+        log_dir=config.wandb_path, project_name=config.project_name, run_name=config.tag
+    )
+    wandb.initialize()
+
+    # 6. transforms
+    train_transform = TRANSFORM.build(config.train_transform)
+    val_transform = TRANSFORM.build(config.val_transform)
+    test_transform = TRANSFORM.build(config.test_transform)
+
+    # 7. dataset
+    train_dataset_config = config.train_dataset
+    train_dataset_config.update({'transform': train_transform})
+    train_dataset = DATASET.build(config.train_dataset)
+    val_dataset_config = config.val_dataset
+    val_dataset_config.update({'transform': val_transform})
+    val_dataset = DATASET.build(config.val_dataset)
+    test_dataset_config = config.test_dataset
+    test_dataset_config.update({'transform': test_transform})
+    test_dataset = DATASET.build(config.test_dataset)
+
+    # dataloaders
+    train_loader = torch.utils.data.DataLoader(
+        train_dataset,
+        batch_size=config.batch_size,
+        shuffle=True,
+        num_workers=config.num_workers,
+        pin_memory=True,
+        drop_last=True,
+    )
+
+    val_loader = torch.utils.data.DataLoader(
+        val_dataset,
+        batch_size=config.batch_size,
+        shuffle=False,
+        num_workers=config.num_workers,
+        pin_memory=True,
+        drop_last=False,
+    )
+
+    test_loader = torch.utils.data.DataLoader(
+        test_dataset,
+        batch_size=config.batch_size,
+        shuffle=False,
+        num_workers=config.num_workers,
+        pin_memory=True,
+        drop_last=False,
+    )
+
+    # 8. model
+    model = MODEL.build(config.model)
+
+    # 9. criterion
+    criterion = CRITERION.build(config.criterion)
+
+    # 10. optimizer
+    optimizer_config = config.optimizer
+    optimizer_config.update({'params': model.parameters()})
+    optimizer = OPTIMIZER.build(config.optimizer)
+
+    # 11. scheduler
+    schdueler_config = config.scheduler
+    num_warmpup_steps = int(
+        len(train_loader) / config.batch_size * config.num_warmup_epochs
+    )
+    num_training_steps = int(len(train_loader) / config.batch_size * config.epochs)
+    schdueler_config.update(
+        {
+            'num_warmup_steps': num_warmpup_steps,
+            'num_training_steps': num_training_steps,
+            'optimizer': optimizer,
+        }
+    )
+    scheduler = SCHEDULER.build(config.scheduler)
+
+    # 12. metric
+    metrics = [METRIC.build(metric) for metric in config.metrics]
+
+    # 13. trainer
+    trainer_config = config.trainer
+    trainer_config.update(
+        {
+            'config': config,
+            'model': model,
+            'train_loader': train_loader,
+            'valid_loader': val_loader,
+            'test_loader': test_loader,
+            'wandb_logger': wandb,
+            'accelerator': accelerator,
+            'optimizer': optimizer,
+            'scheduler': scheduler,
+            'criterion': criterion,
+            'metrics': metrics,
+            'device': device,
+            'dtype': dtype,
+            'exp_path': config.exp_path,
+        }
+    )
+    trainer = TRAINER.build(trainer_config)
+
+    # 14. train
+    trainer.train()
+
+    # 15. test
+    trainer.test()
+
+    # 16. finish
+    wandb.finish()
+
+
+if __name__ == '__main__':
+    args = get_args_parser()
+
+    main(args)
+```
+
+- The configuration file `resnet34.py`:
+```python
+from copy import deepcopy
+
+# fixed parameters
+workdir = 'workdir'
+tag = 'resnet34'
+exp_path = f'{workdir}/{tag}'
+project_name = 'research_project'
+wandb_path = 'wandb'
+checkpoint_path = 'checkpoints'
+num_classes = 2
+dtype = 'float32'
+num_workers = 4
+
+# configurable parameters
+seed = 42
+lr = 1e-3
+epochs = int(1e3)
+batch_size = 32
+num_warmup_epochs = 10
+
+
+transform = dict(type='ImageTransform', mode=None)
+
+train_transform = deepcopy(transform)
+train_transform['mode'] = 'train'
+
+val_transform = deepcopy(transform)
+val_transform['mode'] = 'valid'
+
+test_transform = deepcopy(transform)
+test_transform['mode'] = 'test'
+
+dataset = dict(type='ImageDataset', image_dir=None, transform=None)
+
+train_dataset = deepcopy(dataset)
+train_dataset.update(
+    {'image_dir': 'datasets/cat_and_dog/train', 'transform': train_transform}
+)
+
+val_dataset = deepcopy(dataset)
+val_dataset.update(
+    {'image_dir': 'datasets/cat_and_dog/test', 'transform': val_transform}
+)
+
+test_dataset = deepcopy(dataset)
+test_dataset.update(
+    {'image_dir': 'datasets/cat_and_dog/test', 'transform': test_transform}
+)
+
+model = dict(type='ResNet34', num_classes=num_classes)
+
+criterion = dict(type='CrossEntropyLoss')
+
+optimizer = dict(type='Adam', lr=lr, params=None)
+
+scheduler = dict(
+    type='CosineWithWarmupScheduler',
+    optimizer=None,
+    num_warmup_steps=None,
+    num_training_steps=None,
+)
+
+metrics = [
+    dict(type='Accuracy', topk=(1,)),
+    dict(
+        type='F1Score',
+    ),
+]
+
+trainer = dict(
+    type='Trainer',
+    model=None,
+    train_loader=None,
+    valid_loader=None,
+    test_loader=None,
+    wandb_logger=None,
+    accelerator=None,
+    optimizer=None,
+    scheduler=None,
+    criterion=None,
+    metrics=None,
+    device=None,
+    dtype=None,
+    exp_path=None,
+)
+```
+
+- The `registry.py` module:
+```python
+from mmengine.registry import Registry
+
+DATASET = Registry('dataset', locations=['rp.data'])
+TRANSFORM = Registry('transform', locations=['rp.transform'])
+LOGGER = Registry('logger', locations=['rp.logger'])
+
+MODEL = Registry('model', locations=['rp.model'])
+OPTIMIZER = Registry('optimizer', locations=['rp.optimizer'])
+SCHEDULER = Registry('scheduler', locations=['rp.scheduler'])
+CRITERION = Registry('criterion', locations=['rp.criterion'])
+METRIC = Registry('metric', locations=['rp.metric'])
+TRAINER = Registry('trainer', locations=['rp.trainer'])
+```
+
+
+- config module `config.py`:
+```python
+import os
+from argparse import Namespace
+
+from mmengine import Config
+
+from rp.logger import research_logger as logger
+from rp.utils import assemble_project_path, init_before_training
+
+
+def build_config(config_path: str, args: Namespace) -> Config:
+    config = Config.fromfile(filename=config_path)
+
+    cfg_options = {}
+    for item in args.__dict__:
+        if (
+            item
+            not in [
+                'config',
+            ]
+            and args.__dict__[item] is not None
+        ):
+            cfg_options[item] = args.__dict__[item]
+
+    config.merge_from_dict(cfg_options)
+
+    config.exp_path = assemble_project_path(os.path.join(config.workdir, config.tag))
+    if config.if_remove is None:
+        config.if_remove = bool(
+            input(f"| Arguments PRESS 'y' to REMOVE: {config.exp_path}? ") == 'y'
+        )
+    if config.if_remove:
+        import shutil
+
+        shutil.rmtree(config.exp_path, ignore_errors=True)
+        logger.info(f'| Arguments Remove work_dir: {config.exp_path}')
+    else:
+        logger.info(f'| Arguments Keep work_dir: {config.exp_path}')
+    os.makedirs(config.exp_path, exist_ok=True)
+
+    config.checkpoint_path = os.path.join(config.exp_path, config.checkpoint_path)
+    os.makedirs(config.checkpoint_path, exist_ok=True)
+    logger.info(f'| Arguments Checkpoint path: {config.checkpoint_path}')
+
+    config.wandb_path = os.path.join(config.exp_path, config.wandb_path)
+    os.makedirs(config.wandb_path, exist_ok=True)
+    logger.info(f'| Arguments Wandb path: {config.wandb_path}')
+
+    init_before_training(config.seed)
+    logger.info(f'| Arguments Seed: {config.seed}')
+
+    return config
+```
+
+- model module `resnet.py`:
+```python
+import torch.nn as nn
+from torchvision import models
+
+from rp.registry import MODEL
+
+
+@MODEL.register_module(force=True)
+class ResNet34(nn.Module):
+    def __init__(self, num_classes, pretrained=True):
+        """
+        A ResNet-based image classification model.
+
+        :param num_classes: Number of classes for classification.
+        :param pretrained: If True, use a ResNet model pre-trained on ImageNet.
+        """
+        super(ResNet34, self).__init__()
+
+        # Load a pre-trained ResNet model
+        self.model = models.resnet34(
+            pretrained=pretrained
+        )  # Use resnet34 as an example
+
+        # Replace the final fully connected layer
+        in_features = self.model.fc.in_features
+        self.model.fc = nn.Linear(in_features, num_classes)
+
+    def forward(self, x):
+        """
+        Forward pass for the model.
+
+        :param x: Input tensor of shape (batch_size, 3, H, W).
+        :return: Output tensor of shape (batch_size, num_classes).
+        """
+        return self.model(x)
+
+    def freeze_backbone(self):
+        """
+        Freeze the backbone (pre-trained ResNet layers) for feature extraction.
+        """
+        for param in self.model.parameters():
+            param.requires_grad = False
+        # Keep the fully connected layer trainable
+        for param in self.model.fc.parameters():
+            param.requires_grad = True
+
+    def unfreeze_backbone(self):
+        """
+        Unfreeze the backbone (pre-trained ResNet layers) for fine-tuning.
+        """
+        for param in self.model.parameters():
+            param.requires_grad = True
+
+```
+
+- criterion module `criterion.py`:
+```python
+from torch.nn import CrossEntropyLoss, MSELoss
+
+from rp.registry import CRITERION
+
+CRITERION.register_module(name='MSELoss', module=MSELoss)
+CRITERION.register_module(name='CrossEntropyLoss', module=CrossEntropyLoss)
+```
 </IMPORTANT>
