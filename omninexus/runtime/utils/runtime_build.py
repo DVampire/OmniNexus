@@ -70,7 +70,7 @@ def get_runtime_image_repo_and_tag(base_image: str) -> tuple[str, str]:
     """
 
     if get_runtime_image_repo() in base_image:
-        logger.debug(
+        logger.info(
             f'The provided image [{base_image}] is already a valid runtime image.\n'
             f'Will try to reuse it as is.'
         )
@@ -129,6 +129,7 @@ def build_runtime_image(
 
     See https://docs.all-hands.dev/modules/usage/architecture/runtime for more details.
     """
+
     if build_folder is None:
         with tempfile.TemporaryDirectory() as temp_dir:
             result = build_runtime_image_in_folder(
@@ -175,9 +176,7 @@ def build_runtime_image_in_folder(
 
     logger.info(f'Building image: {hash_image_name}')
     if force_rebuild:
-        logger.debug(
-            f'Force rebuild: [{runtime_image_repo}:{source_tag}] from scratch.'
-        )
+        logger.info(f'Force rebuild: [{runtime_image_repo}:{source_tag}] from scratch.')
         prep_build_folder(
             build_folder,
             base_image,
@@ -201,14 +200,14 @@ def build_runtime_image_in_folder(
 
     # If the exact image already exists, we do not need to build it
     if runtime_builder.image_exists(hash_image_name, False):
-        logger.debug(f'Reusing Image [{hash_image_name}]')
+        logger.info(f'Reusing Image [{hash_image_name}]')
         return hash_image_name
 
     # We look for an existing image that shares the same lock_tag. If such an image exists, we
     # can use it as the base image for the build and just copy source files. This makes the build
     # much faster.
     if runtime_builder.image_exists(lock_image_name):
-        logger.debug(f'Build [{hash_image_name}] from lock image [{lock_image_name}]')
+        logger.info(f'Build [{hash_image_name}] from lock image [{lock_image_name}]')
         build_from = BuildFromImageType.LOCK
         base_image = lock_image_name
     elif runtime_builder.image_exists(versioned_image_name):
@@ -218,7 +217,7 @@ def build_runtime_image_in_folder(
         build_from = BuildFromImageType.VERSIONED
         base_image = versioned_image_name
     else:
-        logger.debug(f'Build [{hash_image_name}] from scratch')
+        logger.info(f'Build [{hash_image_name}] from scratch')
 
     prep_build_folder(build_folder, base_image, build_from, extra_deps)
     if not dry_run:
@@ -249,7 +248,7 @@ def prep_build_folder(
     # If package is not found, build from source code
     omninexus_source_dir = Path(omninexus.__file__).parent
     project_root = omninexus_source_dir.parent
-    logger.debug(f'Building source distribution using project root: {project_root}')
+    logger.info(f'Building source distribution using project root: {project_root}')
 
     # Copy the 'omninexus' directory (Source code)
     shutil.copytree(
@@ -364,7 +363,7 @@ if __name__ == '__main__':
         '--base_image', type=str, default='nikolaik/python-nodejs:python3.12-nodejs22'
     )
     parser.add_argument('--build_folder', type=str, default=None)
-    parser.add_argument('--force_rebuild', action='store_true', default=False)
+    parser.add_argument('--force_rebuild', action='store_true', default=True)
     parser.add_argument('--platform', type=str, default=None)
     args = parser.parse_args()
 
@@ -376,14 +375,14 @@ if __name__ == '__main__':
         assert os.path.exists(
             build_folder
         ), f'Build folder {build_folder} does not exist'
-        logger.debug(
+        logger.info(
             f'Copying the source code and generating the Dockerfile in the build folder: {build_folder}'
         )
 
         runtime_image_repo, runtime_image_tag = get_runtime_image_repo_and_tag(
             args.base_image
         )
-        logger.debug(
+        logger.info(
             f'Runtime image repo: {runtime_image_repo} and runtime image tag: {runtime_image_tag}'
         )
 
@@ -405,7 +404,7 @@ if __name__ == '__main__':
 
             # Move contents of temp_dir to build_folder
             shutil.copytree(temp_dir, build_folder, dirs_exist_ok=True)
-        logger.debug(
+        logger.info(
             f'Build folder [{build_folder}] is ready: {os.listdir(build_folder)}'
         )
 
@@ -420,18 +419,21 @@ if __name__ == '__main__':
                 )
             )
 
-        logger.debug(
+        logger.info(
             f'`config.sh` is updated with the image repo[{runtime_image_repo}] and tags [{runtime_image_tag}, {runtime_image_source_tag}]'
         )
-        logger.debug(
+        logger.info(
             f'Dockerfile, source code and config.sh are ready in {build_folder}'
         )
     else:
         # If a build_folder is not provided, after copying the required source code and dynamically creating the
         # Dockerfile, we actually build the Docker image
-        logger.debug('Building image in a temporary folder')
+        logger.info('Building image in a temporary folder')
         docker_builder = DockerRuntimeBuilder(docker.from_env())
         image_name = build_runtime_image(
-            args.base_image, docker_builder, platform=args.platform
+            args.base_image,
+            docker_builder,
+            platform=args.platform,
+            force_rebuild=args.force_rebuild,
         )
-        logger.debug(f'\nBuilt image: {image_name}\n')
+        logger.info(f'\nBuilt image: {image_name}\n')

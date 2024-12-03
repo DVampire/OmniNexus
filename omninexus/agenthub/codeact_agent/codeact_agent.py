@@ -327,6 +327,9 @@ class CodeActAgent(Agent):
 
         # prepare what we want to send to the LLM
         messages = self._get_messages(state)
+
+        logger.info(messages)
+
         params: dict = {
             'messages': self.llm.format_messages_for_llm(messages),
         }

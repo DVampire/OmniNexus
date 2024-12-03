@@ -1,7 +1,7 @@
 from types import UnionType
 from typing import get_args, get_origin
 
-OH_DEFAULT_AGENT = 'CodeActAgent'
+OH_DEFAULT_AGENT = 'ResearchAgent'
 OH_MAX_ITERATIONS = 100
 
 
