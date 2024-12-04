@@ -14,6 +14,7 @@ from omninexus.agenthub import (  # noqa: E402
     delegator_agent,
     dummy_agent,
     planner_agent,
+    research_agent,
 )
 
 __all__ = [
@@ -23,6 +24,7 @@ __all__ = [
     'delegator_agent',
     'dummy_agent',
     'browsing_agent',
+    'research_agent',
 ]
 
 for agent in all_microagents.values():
