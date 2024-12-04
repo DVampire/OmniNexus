@@ -87,6 +87,12 @@ class Session:
         # Extract the agent-relevant arguments from the request
         args = {key: value for key, value in data.get('args', {}).items()}
         agent_cls = args.get(ConfigType.AGENT, self.config.default_agent)
+
+        logger.info(f'Args: {args}')
+        logger.info(
+            f'Initializing agent: {agent_cls}, {ConfigType.AGENT}, {self.config.default_agent}'
+        )
+
         self.config.security.confirmation_mode = args.get(
             ConfigType.CONFIRMATION_MODE, self.config.security.confirmation_mode
         )
@@ -162,6 +168,9 @@ class Session:
 
     async def dispatch(self, data: dict):
         action = data.get('action', '')
+
+        logger.info(f'Dispatching: {data}')
+
         if action == ActionType.INIT:
             await self._initialize_agent(data)
             return

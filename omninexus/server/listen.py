@@ -259,7 +259,7 @@ async def websocket_endpoint(websocket: WebSocket):
     session management, and event streaming.
         ```json
         {"action": "initialize", "args": {"LLM_MODEL": "ollama/llama3", "AGENT": "CodeActAgent", "LANGUAGE": "en", "LLM_API_KEY": "ollama"}}
-
+        ```
     Args:
         ```
         websocket (WebSocket): The WebSocket connection object.
