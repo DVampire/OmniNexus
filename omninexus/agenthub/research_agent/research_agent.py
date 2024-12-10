@@ -332,10 +332,15 @@ class ResearchAgent(Agent):
             'messages': self.llm.format_messages_for_llm(messages),
         }
         params['tools'] = self.tools
+        logger.info(f'Calling LLM with params: {params}')
         if self.mock_function_calling:
             params['mock_function_calling'] = True
         response = self.llm.completion(**params)
+        logger.info(f'LLM response: {response}')
+
         actions = research_function_calling.response_to_actions(response)
+        logger.info(f'Actions: {actions}')
+
         for action in actions:
             self.pending_actions.append(action)
         return self.pending_actions.popleft()
