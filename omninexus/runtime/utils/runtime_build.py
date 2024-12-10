@@ -12,7 +12,15 @@ import docker
 from dirhash import dirhash
 from jinja2 import Environment, FileSystemLoader
 
-import omninexus
+try:
+    import sys
+
+    root = str(Path(__file__).resolve().parents[3])
+    sys.path.append(root)
+    import omninexus
+except NameError:
+    pass
+
 from omninexus import __version__ as oh_version
 from omninexus.core.logger import omninexus_logger as logger
 from omninexus.runtime.builder import DockerRuntimeBuilder, RuntimeBuilder

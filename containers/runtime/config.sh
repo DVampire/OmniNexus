@@ -80,3 +80,6 @@ DOCKER_IMAGE_SOURCE_TAG=oh_v0.14.0_pjxdkzq7fbr3lud1_ip5zbfnhcosaqdn3
 
 DOCKER_IMAGE_TAG=oh_v0.14.0_image_nikolaik_s_python-nodejs_tag_python3.12-nodejs22
 DOCKER_IMAGE_SOURCE_TAG=oh_v0.14.0_pjxdkzq7fbr3lud1_bflqc017a5lqz565
+
+DOCKER_IMAGE_TAG=oh_v0.14.0_image_nikolaik_s_python-nodejs_tag_python3.12-nodejs22
+DOCKER_IMAGE_SOURCE_TAG=oh_v0.14.0_pjxdkzq7fbr3lud1_vymoggff3dmhvo17
