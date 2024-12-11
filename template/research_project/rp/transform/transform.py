@@ -7,8 +7,7 @@ from rp.registry import TRANSFORM
 @TRANSFORM.register_module(force=True)
 class ImageTransform(transforms.Compose):
     def __init__(self, mode='train'):
-        """
-        A transform selector that dynamically constructs a transform pipeline based on the mode.
+        """A transform selector that dynamically constructs a transform pipeline based on the mode.
         :param mode: 'train', 'valid', or 'test'
         """
         if mode == 'train':

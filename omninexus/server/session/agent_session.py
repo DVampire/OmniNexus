@@ -44,7 +44,6 @@ class AgentSession:
         - sid: The session ID
         - file_store: Instance of the FileStore
         """
-
         self.sid = sid
         self.event_stream = EventStream(sid, file_store)
         self.file_store = file_store
@@ -157,7 +156,6 @@ class AgentSession:
         Parameters:
         - security_analyzer: The name of the security analyzer to use
         """
-
         if security_analyzer:
             logger.debug(f'Using security analyzer: {security_analyzer}')
             self.security_analyzer = options.SecurityAnalyzers.get(
@@ -177,7 +175,6 @@ class AgentSession:
         - config:
         - agent:
         """
-
         if self.runtime is not None:
             raise RuntimeError('Runtime already created')
 
@@ -228,7 +225,6 @@ class AgentSession:
         - agent_to_llm_config:
         - agent_configs:
         """
-
         if self.controller is not None:
             raise RuntimeError('Controller already created')
         if self.runtime is None:

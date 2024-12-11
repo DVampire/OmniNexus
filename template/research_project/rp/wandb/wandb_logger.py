@@ -8,8 +8,7 @@ from rp.registry import LOGGER
 @LOGGER.register_module(force=True)
 class WandbLogger:
     def __init__(self, log_dir, project_name, run_name=None, config=None):
-        """
-        A class for managing wandb logging and experiment tracking.
+        """A class for managing wandb logging and experiment tracking.
 
         :param log_dir: The directory to save wandb logs.
         :param project_name: The name of the wandb project.
@@ -23,9 +22,7 @@ class WandbLogger:
         self.run = None
 
     def initialize(self):
-        """
-        Initialize a wandb run with the given parameters.
-        """
+        """Initialize a wandb run with the given parameters."""
         self.run = wandb.init(
             project=self.project_name,
             name=self.run_name,
@@ -35,8 +32,7 @@ class WandbLogger:
         logger.info(f'Wandb run initialized: {self.run_name or self.run.name}')
 
     def log(self, metrics, step=None):
-        """
-        Log metrics to wandb.
+        """Log metrics to wandb.
 
         :param metrics: A dictionary of metrics to log (e.g., {'loss': 0.1, 'accuracy': 0.9}).
         :param step: Optional, the step at which the metrics are logged.
@@ -48,8 +44,7 @@ class WandbLogger:
         wandb.log(metrics, step=step)
 
     def save_model(self, model, model_path):
-        """
-        Save a model file and upload it to wandb.
+        """Save a model file and upload it to wandb.
 
         :param model: The model to save.
         :param model_path: The local path to save the model.
@@ -68,9 +63,7 @@ class WandbLogger:
         logger.info(f'Model uploaded to wandb: {model_path}')
 
     def finish(self):
-        """
-        Finish the current wandb run.
-        """
+        """Finish the current wandb run."""
         if self.run is not None:
             self.run.finish()
             logger.info('Wandb run finished.')

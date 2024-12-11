@@ -12,16 +12,14 @@ class Accuracy:
             5,
         ),
     ):
-        """
-        Accuracy metric supporting top-k accuracy calculation.
+        """Accuracy metric supporting top-k accuracy calculation.
 
         :param topk: Tuple of top-k values for which accuracy is calculated (e.g., (1, 5)).
         """
         self.topk = topk
 
     def __call__(self, output, target):
-        """
-        Calculate top-k accuracy.
+        """Calculate top-k accuracy.
 
         :param output: Model predictions (logits or probabilities), shape (batch_size, num_classes).
         :param target: Ground truth labels, shape (batch_size).
@@ -50,14 +48,11 @@ class Accuracy:
 @METRIC.register_module(force=True)
 class MSE:
     def __init__(self):
-        """
-        Mean Squared Error (MSE) metric.
-        """
+        """Mean Squared Error (MSE) metric."""
         pass
 
     def __call__(self, output, target):
-        """
-        Calculate MSE.
+        """Calculate MSE.
 
         :param output: Model predictions, shape (batch_size,).
         :param target: Ground truth labels, shape (batch_size,).
@@ -70,16 +65,14 @@ class MSE:
 @METRIC.register_module(force=True)
 class Precision:
     def __init__(self, average='binary'):
-        """
-        Precision metric.
+        """Precision metric.
 
         :param average: 'binary', 'micro', 'macro', or 'weighted'.
         """
         self.average = average
 
     def __call__(self, output, target):
-        """
-        Calculate Precision.
+        """Calculate Precision.
 
         :param output: Model predictions (logits or probabilities), shape (batch_size, num_classes).
         :param target: Ground truth labels, shape (batch_size).
@@ -100,16 +93,14 @@ class Precision:
 @METRIC.register_module(force=True)
 class Recall:
     def __init__(self, average='binary'):
-        """
-        Recall metric.
+        """Recall metric.
 
         :param average: 'binary', 'micro', 'macro', or 'weighted'.
         """
         self.average = average
 
     def __call__(self, output, target):
-        """
-        Calculate Recall.
+        """Calculate Recall.
 
         :param output: Model predictions (logits or probabilities), shape (batch_size, num_classes).
         :param target: Ground truth labels, shape (batch_size).
@@ -128,16 +119,14 @@ class Recall:
 @METRIC.register_module(force=True)
 class F1Score:
     def __init__(self, average='binary'):
-        """
-        F1 Score metric.
+        """F1 Score metric.
 
         :param average: 'binary', 'micro', 'macro', or 'weighted'.
         """
         self.average = average
 
     def __call__(self, output, target):
-        """
-        Calculate F1 Score.
+        """Calculate F1 Score.
 
         :param output: Model predictions (logits or probabilities), shape (batch_size, num_classes).
         :param target: Ground truth labels, shape (batch_size).

@@ -7,8 +7,7 @@ from rp.registry import MODEL
 @MODEL.register_module(force=True)
 class ResNet34(nn.Module):
     def __init__(self, num_classes, pretrained=True):
-        """
-        A ResNet-based image classification model.
+        """A ResNet-based image classification model.
 
         :param num_classes: Number of classes for classification.
         :param pretrained: If True, use a ResNet model pre-trained on ImageNet.
@@ -25,8 +24,7 @@ class ResNet34(nn.Module):
         self.model.fc = nn.Linear(in_features, num_classes)
 
     def forward(self, x):
-        """
-        Forward pass for the model.
+        """Forward pass for the model.
 
         :param x: Input tensor of shape (batch_size, 3, H, W).
         :return: Output tensor of shape (batch_size, num_classes).
@@ -34,9 +32,7 @@ class ResNet34(nn.Module):
         return self.model(x)
 
     def freeze_backbone(self):
-        """
-        Freeze the backbone (pre-trained ResNet layers) for feature extraction.
-        """
+        """Freeze the backbone (pre-trained ResNet layers) for feature extraction."""
         for param in self.model.parameters():
             param.requires_grad = False
         # Keep the fully connected layer trainable
@@ -44,8 +40,6 @@ class ResNet34(nn.Module):
             param.requires_grad = True
 
     def unfreeze_backbone(self):
-        """
-        Unfreeze the backbone (pre-trained ResNet layers) for fine-tuning.
-        """
+        """Unfreeze the backbone (pre-trained ResNet layers) for fine-tuning."""
         for param in self.model.parameters():
             param.requires_grad = True

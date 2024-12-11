@@ -11,8 +11,7 @@ from rp.utils import assemble_project_path
 @DATASET.register_module(force=True)
 class ImageDataset(Dataset):
     def __init__(self, image_dir, transform=None):
-        """
-        A custom image dataset class for loading images and their corresponding labels.
+        """A custom image dataset class for loading images and their corresponding labels.
 
         :param image_dir: Root directory of the dataset, with the structure:
             root/
@@ -47,16 +46,14 @@ class ImageDataset(Dataset):
                         self.labels.append(idx)
 
     def __len__(self):
-        """
-        Returns the total number of images in the dataset.
+        """Returns the total number of images in the dataset.
 
         :return: Integer representing the total number of images.
         """
         return len(self.image_paths)
 
     def __getitem__(self, idx):
-        """
-        Fetches the image and label at the specified index.
+        """Fetches the image and label at the specified index.
 
         :param idx: Index of the data item.
         :return: A tuple (image, label), where image is the transformed image tensor and label is an integer class index.

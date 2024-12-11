@@ -6,8 +6,7 @@ from rp.registry import LOGGER
 @LOGGER.register_module(force=True)
 class Logger(logging.Logger):
     def __init__(self, name='research_logger', level=logging.INFO):
-        """
-        A custom logger class for enhanced console logging with colored output.
+        """A custom logger class for enhanced console logging with colored output.
 
         :param name: Name of the logger.
         :param level: Logging level (e.g., logging.INFO, logging.DEBUG).

@@ -76,7 +76,6 @@ def get_runtime_image_repo_and_tag(base_image: str) -> tuple[str, str]:
     Returns:
     - tuple[str, str]: The Docker repo and tag of the Docker image
     """
-
     if get_runtime_image_repo() in base_image:
         logger.info(
             f'The provided image [{base_image}] is already a valid runtime image.\n'
@@ -137,7 +136,6 @@ def build_runtime_image(
 
     See https://docs.all-hands.dev/modules/usage/architecture/runtime for more details.
     """
-
     if build_folder is None:
         with tempfile.TemporaryDirectory() as temp_dir:
             result = build_runtime_image_in_folder(
