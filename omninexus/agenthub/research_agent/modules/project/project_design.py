@@ -28,6 +28,7 @@ _PROJECT_DESIGN_DESCRIPTION = """Design the code organization structure of the r
 │   └── registry.py              # Module for registering components, e.g., models, optimizers, schedulers, etc.
 ├── configs                      # Directory for configuration files, e.g., for hyperparameters, experiment settings, etc.
 ├── datasets                     # Directory for datasets (ignored; provided by the user)
+├── test                         # Directory for unit tests.
 ├── run.py                       # Main entry point for running the project.
 ├── README.md                    # Project documentation.
 ├── requirements.txt             # File containing the required Python packages.

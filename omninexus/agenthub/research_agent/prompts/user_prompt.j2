@@ -1,6 +1,104 @@
 <IMPORTANT>
-* You MUST follow the PEP8 standard for the generated python code.
-* You MUST first design the code structure of the research project according to the template.
-* You MUST create the necessary directories for a research project (e.g., src, configs, datasets, tests, src/config/, src/data/, etc.) before generating the Python scripts.
-* You MUST create the necessary Python scripts for each module in the src package (e.g., __init__.py and model.py in the model module).
+
+* When generate research project, you MUST follow the following steps:
+    1. You MUST follow the PEP8 standard for the generated python code.
+    2. Before generating the modules:
+        * You MUST first design the code structure of the research project according to the template.
+        * You MUST create the necessary directories for a research project (e.g., src, configs, datasets, tests, src/config/, src/data/, etc.) before generating the modules.
+    3. Generating the modules:
+        * You MUST generate each module one by one and create the necessary Python scripts for each module in the src package (e.g., __init__.py and model.py in the model module).
+    4. After generated the modules:
+        * You MUST generate the necessary unit tests for each module in the tests package.
+        * You MUST create the experiment parameters in the config file.
+        * You MUST generate the main entry point for running the project (e.g., run.py).
+        * You MUST generate the README, requirements.txt, setup.py, and other necessary files for the project.
+
+* When browsing the latest research about some topic, you MUST follow the following steps:
+    1. You MUST search for at least 5 research directions related to the topic.
+    2. For each research direction, you MUST search for at least 3 research papers.
+    3. You MUST provide the base information of the research papers, including the 'title', 'link', 'research direction', 'date', and number of 'citations'.
+    4. You MUST read the abstract, introduction, and conclusion of the research papers.
+    5. You MUST summarize the research papers and write down the 'abstract', 'contributions', 'key points', and 'novel ideas' of the papers.
+
+    ** Examples **
+    Paper 1:
+        * Title: Attention is All You Need
+        * Link: https://arxiv.org/abs/1706.03762
+        * Research Direction: Transformer Models
+        * Date: June 2017
+        * Cited By: 145444
+        * Abstract: This paper introduces the Transformer model, which relies entirely on self-attention mechanisms to compute representations of input and output sequences. The model achieves state-of-the-art performance on various natural language processing tasks.
+        * Contributions:
+            - The paper presents the Transformer model, which outperforms existing sequence-to-sequence models.
+            - The paper demonstrates the effectiveness of self-attention mechanisms in capturing long-range dependencies in sequences.
+        * Key Points:
+            - The Transformer model uses self-attention to compute representations of input and output sequences.
+            - The model does not rely on recurrent or convolutional layers and can capture long-range dependencies efficiently.
+        * Novel Ideas: The paper introduces the concept of self-attention mechanisms for sequence modeling.
+    Paper 2:
+        * Title: BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding
+        * Link: https://arxiv.org/abs/1810.04805
+        * Research Direction: Pre-trained Language Models
+        * Year: October 2018
+        * Cited By: 121777
+        * Abstract: This paper introduces BERT, a pre-trained language representation model that achieves state-of-the-art performance on various natural language understanding tasks. BERT is pre-trained on a large corpus of text data using a masked language modeling objective.
+        * Contributions:
+            - The paper presents the BERT model, which significantly improves performance on a wide range of natural language understanding tasks.
+            - The paper introduces the concept of pre-training language representations using a masked language modeling objective.
+        * Key Points:
+            - BERT is pre-trained on a large corpus of text data using a masked language modeling objective.
+            - The model uses a bidirectional transformer architecture to capture contextual information in text.
+        * Novel Ideas: The paper introduces the concept of pre-training language representations using a masked language modeling objective.
+
+    Summary:
+        * Key trends:
+            - The Transformer model and BERT have been significant advancements in natural language processing.
+            - Self-attention mechanisms and pre-training language representations have shown to be effective in capturing contextual information in text.
+        * Key challenges:
+            - The scalability and efficiency of large pre-trained models like BERT.
+            - The interpretability and explainability of deep learning models like Transformers.
+        * Future directions:
+            - Exploring more efficient and scalable pre-training methods for large language models.
+            - Investigating ways to improve the interpretability and explainability of deep learning models.
+
+* When provide some novel ideas for a topic, you MUST follow the following steps:
+    1. You MUST think about the problem domain and identify the key challenges or limitations in existing approaches.
+    2. You MUST consider the latest research trends and advancements in the field.
+    3. You MUST brainstorm new ideas or approaches that address the identified challenges or limitations.
+    4. You MUST describe the novel ideas clearly and concisely, highlighting their potential impact on the research field.
+    5. You MUST describe how to implement the novel ideas in the research project for each idea.
+
+    ** Examples **
+    Problem Domain: Neural Language Modeling
+    Key Challenges:
+        - Capturing long-range dependencies in text sequences.
+        - Efficiently modeling contextual information in text.
+    Latest Research Trends:
+        - Self-attention mechanisms in Transformer models.
+        - Pre-training language representations using large text corpora.
+    Novel Ideas:
+        1. Hierarchical Self-Attention Mechanisms:
+            - Key Idea: Introduce hierarchical self-attention mechanisms that capture dependencies at different levels of granularity in text sequences.
+            - Implementation: Design a multi-layer self-attention architecture that aggregates information from different levels of abstraction.
+            - Surprisingness:
+                - Score: 3/5
+                - Reason: While hierarchical attention mechanisms are not new, their application to neural language modeling can provide new insights.
+            - Newness:
+                - Score: 4/5
+                - Reason: The idea of using hierarchical self-attention mechanisms in neural language modeling is relatively novel.
+            - Novelty:
+                - Score: 4/5
+                - Reason: The proposed approach can improve the model's ability to capture long-range dependencies and contextual information.
+        2. Adaptive Pre-training Strategies:
+            - Key Idea: Develop adaptive pre-training strategies that dynamically adjust the pre-training objectives based on the complexity of the input data.
+            - Implementation: Implement a reinforcement learning-based approach to optimize the pre-training objectives for different text domains.
+            - Surprisingness:
+                - Score: 4/5
+                - Reason: Adaptive pre-training strategies are relatively new and can improve the efficiency of pre-trained language models.
+            - Newness:
+                - Score: 5/5
+                - Reason: The idea of dynamically adjusting pre-training objectives based on input complexity is innovative.
+            - Novelty:
+                - Score: 4/5
+                - Reason: The proposed approach can enhance the model's ability to learn domain-specific features during pre-training.
 </IMPORTANT>

@@ -16,6 +16,7 @@ from omninexus.agenthub.research_agent.modules.project import (
     ProjectConfigurationTool,
     ProjectCriterionTool,
     ProjectDatasetTool,
+    ProjectDesignTool,
     ProjectExperimentTool,
     ProjectLoggerTool,
     ProjectMetricTool,
@@ -131,15 +132,16 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
 
 
 def get_tools(
-    codeact_enable_browsing: bool = False,
-    codeact_enable_llm_editor: bool = False,
-    codeact_enable_jupyter: bool = False,
+    codeact_enable_browsing: bool = True,
+    codeact_enable_llm_editor: bool = True,
+    codeact_enable_jupyter: bool = True,
 ) -> list[ChatCompletionToolParam]:
     tools = [FinishTool, CmdRunTool]
     modules_project = [
         ProjectConfigurationTool,
         ProjectCriterionTool,
         ProjectDatasetTool,
+        ProjectDesignTool,
         ProjectExperimentTool,
         ProjectLoggerTool,
         ProjectMetricTool,
@@ -155,8 +157,8 @@ def get_tools(
 
     tools = tools + modules_project
 
-    if codeact_enable_browsing:
-        tools.append(BrowserTool)
+    tools.append(BrowserTool)
+
     if codeact_enable_jupyter:
         tools.append(IPythonTool)
     if codeact_enable_llm_editor:
