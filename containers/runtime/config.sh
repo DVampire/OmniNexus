@@ -95,3 +95,9 @@ DOCKER_IMAGE_SOURCE_TAG=oh_v0.14.0_pjxdkzq7fbr3lud1_hm9ivjz7pt37e0b3
 
 DOCKER_IMAGE_TAG=oh_v0.14.0_image_nikolaik_s_python-nodejs_tag_python3.12-nodejs22
 DOCKER_IMAGE_SOURCE_TAG=oh_v0.14.0_pjxdkzq7fbr3lud1_yt6baz3anueobeb4
+
+DOCKER_IMAGE_TAG=oh_v0.14.0_image_nikolaik_s_python-nodejs_tag_python3.12-nodejs22
+DOCKER_IMAGE_SOURCE_TAG=oh_v0.14.0_pjxdkzq7fbr3lud1_b7b3pock814xm2e2
+
+DOCKER_IMAGE_TAG=oh_v0.14.0_image_nikolaik_s_python-nodejs_tag_python3.12-nodejs22
+DOCKER_IMAGE_SOURCE_TAG=oh_v0.14.0_pjxdkzq7fbr3lud1_wqs8dh4yyo9aeklb
