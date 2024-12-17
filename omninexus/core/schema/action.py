@@ -86,5 +86,8 @@ class ActionTypeSchema(BaseModel):
     SEND_PR: str = Field(default='send_pr')
     """Send a PR to github."""
 
+    DESIGN: str = Field(default='design')
+    """Design a project."""
+
 
 ActionType = ActionTypeSchema()

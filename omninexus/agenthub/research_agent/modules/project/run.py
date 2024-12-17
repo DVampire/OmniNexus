@@ -1,3 +1,20 @@
+"""This file contains the function calling implementation for different actions.
+
+This is similar to the functionality of `CodeActResponseParser`.
+"""
+
+from litellm import (
+    ChatCompletionToolParam,
+    ChatCompletionToolParamFunctionChunk,
+)
+
+_RUN_DESCRIPTION = """Generate the main entry point for running the project.
+* The assistant MUST first create a run.py file in src directory.
+
+For example, the run.py file should look like this:
+
+** run.py **
+```python
 import argparse
 import os
 
@@ -15,7 +32,7 @@ from src.registry import (
     TRANSFORM,
 )
 from src.utils import assemble_project_path, to_torch_dtype
-from src.wandb import WandbLogger
+from src.logger import WandbLogger
 
 
 def get_args_parser():
@@ -174,3 +191,28 @@ if __name__ == '__main__':
     args = get_args_parser()
 
     main(args)
+```
+
+Note: Execute a bash command in the terminal to generate the run.py. The command should be run in the root directory where the run.py should be generated.
+* Long running commands: For commands that may run indefinitely, it should be run in the background and the output should be redirected to a file, e.g. command = `python3 app.py > server.log 2>&1 &`.
+* Interactive: If a bash command returns exit code `-1`, this means the process is not yet finished. The assistant must then send a second call to terminal with an empty `command` (which will retrieve any additional logs), or it can send additional text (set `command` to the text) to STDIN of the running process, or it can send command=`ctrl+c` to interrupt the process.
+* Timeout: If a command execution result says "Command timed out. Sending SIGINT to the process", the assistant should retry running the command in the background.
+"""
+
+ProjectRunTool = ChatCompletionToolParam(
+    type='function',
+    function=ChatCompletionToolParamFunctionChunk(
+        name='project_run',
+        description=_RUN_DESCRIPTION,
+        parameters={
+            'type': 'object',
+            'properties': {
+                'command': {
+                    'type': 'string',
+                    'description': 'The bash command to generate the run.py in the terminal. Can be empty to view additional logs when previous exit code is `-1`. Can be `ctrl+c` to interrupt the currently running process.',
+                },
+            },
+            'required': ['command'],
+        },
+    ),
+)

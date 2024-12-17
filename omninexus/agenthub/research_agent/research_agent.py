@@ -19,6 +19,7 @@ from omninexus.events.action import (
     FileEditAction,
     IPythonRunCellAction,
     MessageAction,
+    ProjectAction,
 )
 from omninexus.events.observation import (
     AgentDelegateObservation,
@@ -26,6 +27,7 @@ from omninexus.events.observation import (
     CmdOutputObservation,
     FileEditObservation,
     IPythonRunCellObservation,
+    ProjectObservation,
     UserRejectObservation,
 )
 from omninexus.events.observation.error import ErrorObservation
@@ -153,7 +155,7 @@ class ResearchAgent(Agent):
                 BrowseInteractiveAction,
             ),
         ) or (
-            isinstance(action, (AgentFinishAction, CmdRunAction))
+            isinstance(action, (AgentFinishAction, CmdRunAction, ProjectAction))
             and action.source == 'agent'
         ):
             tool_metadata = action.tool_call_metadata
@@ -242,6 +244,19 @@ class ResearchAgent(Agent):
                     obs.content + obs.interpreter_details, max_message_chars
                 )
             text += f'\n[Command finished with exit code {obs.exit_code}]'
+            message = Message(role='user', content=[TextContent(text=text)])
+        elif isinstance(obs, ProjectObservation):
+            # if it doesn't have tool call metadata, it was triggered by a user action
+            if obs.tool_call_metadata is None:
+                text = truncate_content(
+                    f'\nObserved result of project design command executed by user:\n{obs.content}',
+                    max_message_chars,
+                )
+            else:
+                text = truncate_content(
+                    obs.content + obs.interpreter_details, max_message_chars
+                )
+            text += f'\n[Project command finished with exit code {obs.exit_code}]'
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, IPythonRunCellObservation):
             text = obs.content
@@ -332,6 +347,10 @@ class ResearchAgent(Agent):
             'messages': self.llm.format_messages_for_llm(messages),
         }
         params['tools'] = self.tools
+
+        tools_name = [tool['function']['name'] for tool in self.tools]
+        logger.info(f'Tools num: {len(tools_name)}, Tools: {tools_name}')
+
         logger.info(f'Calling LLM with params: {params}')
         if self.mock_function_calling:
             params['mock_function_calling'] = True

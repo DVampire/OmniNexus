@@ -15,6 +15,7 @@ from omninexus.events.action.files import (
     FileWriteAction,
 )
 from omninexus.events.action.message import MessageAction
+from omninexus.events.action.modules import ProjectAction
 from omninexus.events.action.tasks import AddTaskAction, ModifyTaskAction
 
 __all__ = [
@@ -36,4 +37,5 @@ __all__ = [
     'IPythonRunCellAction',
     'MessageAction',
     'ActionConfirmationStatus',
+    'ProjectAction',
 ]

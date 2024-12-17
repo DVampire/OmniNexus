@@ -12,6 +12,7 @@ from omninexus.events.observation.files import (
     FileReadObservation,
     FileWriteObservation,
 )
+from omninexus.events.observation.modules import ProjectObservation
 from omninexus.events.observation.observation import Observation
 from omninexus.events.observation.reject import UserRejectObservation
 from omninexus.events.observation.success import SuccessObservation
@@ -30,4 +31,5 @@ __all__ = [
     'AgentDelegateObservation',
     'SuccessObservation',
     'UserRejectObservation',
+    'ProjectObservation',
 ]
