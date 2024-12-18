@@ -12,6 +12,10 @@ from litellm import (
     ModelResponse,
 )
 
+from omninexus.agenthub.research_agent.modules.idea import (
+    IdeaGenerationTool,
+    RelevantResearchRetrievalTool,
+)
 from omninexus.agenthub.research_agent.modules.project import (
     ProjectConfigurationTool,
     ProjectCriterionTool,
@@ -45,9 +49,11 @@ from omninexus.events.action import (
     BrowseInteractiveAction,
     CmdRunAction,
     FileEditAction,
+    IdeaGenerationAction,
     IPythonRunCellAction,
     MessageAction,
     ProjectAction,
+    RelevantResearchRetrievalAction,
 )
 from omninexus.events.tool import ToolCallMetadata
 
@@ -106,6 +112,12 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                 action = IPythonRunCellAction(code=code, include_extra=False)
             elif tool_call.function.name == 'browser':
                 action = BrowseInteractiveAction(browser_actions=arguments['code'])
+            elif tool_call.function.name == 'relevant_research_retrieval':
+                action = RelevantResearchRetrievalAction(
+                    browser_actions=arguments['code']
+                )
+            elif tool_call.function.name == 'idea_generation':
+                action = IdeaGenerationAction(**arguments)
             elif tool_call.function.name.startswith('project_'):
                 action = ProjectAction(**arguments)
             else:
@@ -136,7 +148,7 @@ def get_tools(
     codeact_enable_llm_editor: bool = True,
     codeact_enable_jupyter: bool = True,
 ) -> list[ChatCompletionToolParam]:
-    tools = [FinishTool, CmdRunTool]
+    tools = [FinishTool, CmdRunTool, StrReplaceEditorTool]
     modules_project = [
         ProjectConfigurationTool,
         ProjectCriterionTool,
@@ -155,14 +167,15 @@ def get_tools(
         ProjectUtilsTool,
     ]
 
-    tools = tools + modules_project
+    modules_idea = [
+        RelevantResearchRetrievalTool,
+        IdeaGenerationTool,
+    ]
+
+    tools = modules_idea + modules_project + tools
 
     tools.append(BrowserTool)
+    tools.append(IPythonTool)
+    tools.append(LLMBasedFileEditTool)
 
-    if codeact_enable_jupyter:
-        tools.append(IPythonTool)
-    if codeact_enable_llm_editor:
-        tools.append(LLMBasedFileEditTool)
-    else:
-        tools.append(StrReplaceEditorTool)
     return tools

@@ -17,9 +17,11 @@ from omninexus.events.action import (
     BrowseInteractiveAction,
     CmdRunAction,
     FileEditAction,
+    IdeaGenerationAction,
     IPythonRunCellAction,
     MessageAction,
     ProjectAction,
+    RelevantResearchRetrievalAction,
 )
 from omninexus.events.observation import (
     AgentDelegateObservation,
@@ -28,6 +30,7 @@ from omninexus.events.observation import (
     FileEditObservation,
     IPythonRunCellObservation,
     ProjectObservation,
+    RelevantResearchRetrievalOutputObservation,
     UserRejectObservation,
 )
 from omninexus.events.observation.error import ErrorObservation
@@ -153,6 +156,8 @@ class ResearchAgent(Agent):
                 IPythonRunCellAction,
                 FileEditAction,
                 BrowseInteractiveAction,
+                RelevantResearchRetrievalAction,
+                IdeaGenerationAction,
             ),
         ) or (
             isinstance(action, (AgentFinishAction, CmdRunAction, ProjectAction))
@@ -274,6 +279,12 @@ class ResearchAgent(Agent):
             text = truncate_content(str(obs), max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, BrowserOutputObservation):
+            text = obs.get_agent_obs_text()
+            message = Message(
+                role='user',
+                content=[TextContent(text=text)],
+            )
+        elif isinstance(obs, RelevantResearchRetrievalOutputObservation):
             text = obs.get_agent_obs_text()
             message = Message(
                 role='user',

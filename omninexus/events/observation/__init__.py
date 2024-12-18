@@ -15,6 +15,9 @@ from omninexus.events.observation.files import (
 from omninexus.events.observation.modules import ProjectObservation
 from omninexus.events.observation.observation import Observation
 from omninexus.events.observation.reject import UserRejectObservation
+from omninexus.events.observation.retrieval import (
+    RelevantResearchRetrievalOutputObservation,
+)
 from omninexus.events.observation.success import SuccessObservation
 
 __all__ = [
@@ -32,4 +35,5 @@ __all__ = [
     'SuccessObservation',
     'UserRejectObservation',
     'ProjectObservation',
+    'RelevantResearchRetrievalOutputObservation',
 ]

@@ -14,8 +14,10 @@ from omninexus.events.action.files import (
     FileReadAction,
     FileWriteAction,
 )
+from omninexus.events.action.idea import IdeaGenerationAction
 from omninexus.events.action.message import MessageAction
 from omninexus.events.action.modules import ProjectAction
+from omninexus.events.action.retrieval import RelevantResearchRetrievalAction
 from omninexus.events.action.tasks import AddTaskAction, ModifyTaskAction
 
 __all__ = [
@@ -38,4 +40,6 @@ __all__ = [
     'MessageAction',
     'ActionConfirmationStatus',
     'ProjectAction',
+    'RelevantResearchRetrievalAction',
+    'IdeaGenerationAction',
 ]
