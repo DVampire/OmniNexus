@@ -5,7 +5,7 @@ from omninexus.events.observation.observation import Observation
 
 
 @dataclass
-class ProjectObservation(Observation):
+class IdeaGenerationObservation(Observation):
     """This data class represents the output of a command."""
 
     command_id: int
@@ -21,7 +21,7 @@ class ProjectObservation(Observation):
 
     @property
     def message(self) -> str:
-        return f'Project command `{self.command}` executed with exit code {self.exit_code}.'
+        return f'Idea Generation command `{self.command}` executed with exit code {self.exit_code}.'
 
     def __str__(self) -> str:
-        return f'**ProjectObservation (source={self.source}, exit code={self.exit_code})**\n{self.content}'
+        return f'**IdeaGenerationObservation (source={self.source}, exit code={self.exit_code})**\n{self.content}'

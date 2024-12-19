@@ -8,15 +8,17 @@ from litellm import (
     ChatCompletionToolParamFunctionChunk,
 )
 
-_IDEA_GENERATION_DESCRIPTION = """Generate ideas based on the retrieved relevant researches.
+_IDEA_GENERATION_DESCRIPTION = """Based on the relevant research results, create a [research_domain]_ideas.md file containing innovative ideas about this domain.
 
 * You MUST first identify the RESEARCH DOMAIN or research field you are addressing, such as Large Language Models (LLMs), Reinforcement Learning and Human Feedback (RLHF), or Multimodal Learning.
 * You MUST provide a brief overview of the RESEARCH DIRECTIONS or topics within the domain, highlighting key areas of focus and recent advancements.
 * You MUST identify the key CHALLENGES or limitations faced by the research field or the specific paper or topic you are addressing. You can refer to existing research papers, reviews, or discussions to identify these challenges.
+* You MUST provide IMPROVEMENTS before generating novel ideas. These improvements should be innovative approaches or solutions to address the identified challenges.
 * For each research direction, you MUST brainstorm at least 3 innovative and novel ideas or approaches to address the identified challenges. These ideas should be innovative, feasible, and have the potential to advance the research field.
 * You MUST describe how to implement the novel ideas in the research project for each idea. You can provide a high-level ABSTRACT of the proposed methods, IMPLEMENTATION details, and ALGORITHM flow for each idea.
 
-## Examples
+## For example,  the [research_domain]_ideas.md file may look like this:
+(this is the start of the file)
 ** RESEARCH DOMAIN **
 * Large Language Models (LLMs)
 
@@ -34,6 +36,11 @@ _IDEA_GENERATION_DESCRIPTION = """Generate ideas based on the retrieved relevant
 * Alignment with Human Values: Ensuring that LLMs consistently align with human intent and ethical values remains challenging, especially in reducing biases, harmful content, and unintended behaviors.
 * Long-Context Limitations: Despite progress, LLMs still struggle with effectively processing and reasoning over long sequences of text, leading to loss of context or degradation in performance.
 * Data Privacy and Security: Training and fine-tuning LLMs on vast datasets raise concerns regarding the use of private or sensitive information, along with risks like model inversion and data leakage.
+
+** IMPROVEMENTS **
+* Efficient Computation: Develop lightweight LLM architectures, model distillation techniques, or dynamic computation strategies to reduce costs and improve efficiency.
+* Factual Consistency: Integrate fact-checking modules, hallucination detection mechanisms, or knowledge verification systems to enhance LLMs' reliability and trustworthiness.
+* Human-Centric Design: Implement user feedback loops, preference modeling, or interactive learning paradigms to align LLMs with human values and ethical considerations.
 
 ** NOVEL IDEAS **
 * Idea 1: Adaptive Computation for Dynamic Reasoning
@@ -55,6 +62,12 @@ _IDEA_GENERATION_DESCRIPTION = """Generate ideas based on the retrieved relevant
     - ALGORITHM:
         * Input Query -> Retrieve Context -> Generate Response -> Factual Consistency Check -> (If Failure) Regenerate -> Output.
         * Pseudocode: Provide a high-level Pseudocode snippet.
+(this is the end of the file)
+
+Note: Execute a bash command in the terminal to generate the [research_domain]_ideas.md. The command should be run in the root directory where the [research_domain]_ideas.md should be generated.
+* Long running commands: For commands that may run indefinitely, it should be run in the background and the output should be redirected to a file, e.g. command = `python3 app.py > server.log 2>&1 &`.
+* Interactive: If a bash command returns exit code `-1`, this means the process is not yet finished. The assistant must then send a second call to terminal with an empty `command` (which will retrieve any additional logs), or it can send additional text (set `command` to the text) to STDIN of the running process, or it can send command=`ctrl+c` to interrupt the process.
+* Timeout: If a command execution result says "Command timed out. Sending SIGINT to the process", the assistant should retry running the command in the background.
 """
 
 IdeaGenerationTool = ChatCompletionToolParam(
@@ -65,12 +78,12 @@ IdeaGenerationTool = ChatCompletionToolParam(
         parameters={
             'type': 'object',
             'properties': {
-                'retrieved_relevant_researches': {
+                'command': {
                     'type': 'string',
-                    'description': 'Retrieved relevant researches that serve as the basis for generating new ideas. Include the key research directions, challenges, and insights from the researches.',
+                    'description': 'The bash command to execute to generate ideas file. Can be empty to view additional logs when previous exit code is `-1`. Can be `ctrl+c` to interrupt the currently running process.',
                 },
             },
-            'required': ['retrieved_relevant_researches'],
+            'required': ['command'],
         },
     ),
 )
