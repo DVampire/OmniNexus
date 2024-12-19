@@ -10,11 +10,11 @@ from litellm import (
 
 _IDEA_GENERATION_DESCRIPTION = """Generate ideas based on the retrieved relevant researches.
 
-* You MUST first identify the RESEARCH DOMAIN you are addressing, such as Large Language Models (LLMs), Reinforcement Learning and Human Feedback (RLHF), or Multimodal Learning.
+* You MUST first identify the RESEARCH DOMAIN or research field you are addressing, such as Large Language Models (LLMs), Reinforcement Learning and Human Feedback (RLHF), or Multimodal Learning.
 * You MUST provide a brief overview of the RESEARCH DIRECTIONS or topics within the domain, highlighting key areas of focus and recent advancements.
 * You MUST identify the key CHALLENGES or limitations faced by the research field or the specific paper or topic you are addressing. You can refer to existing research papers, reviews, or discussions to identify these challenges.
-* You MUST brainstorm new ideas or approaches that address the identified directions and challenges. These ideas should be innovative, feasible, and have the potential to advance the research field.
-* You MUST describe how to implement the novel ideas in the research project for each idea. You can provide a high-level overview of the proposed methods, algorithms, or architectures.
+* For each research direction, you MUST brainstorm at least 3 innovative and novel ideas or approaches to address the identified challenges. These ideas should be innovative, feasible, and have the potential to advance the research field.
+* You MUST describe how to implement the novel ideas in the research project for each idea. You can provide a high-level ABSTRACT of the proposed methods, IMPLEMENTATION details, and ALGORITHM flow for each idea.
 
 ## Examples
 ** RESEARCH DOMAIN **
@@ -37,7 +37,7 @@ _IDEA_GENERATION_DESCRIPTION = """Generate ideas based on the retrieved relevant
 
 ** NOVEL IDEAS **
 * Idea 1: Adaptive Computation for Dynamic Reasoning
-    - IDEA: Develop a multi-stage adaptive computation mechanism where LLMs selectively apply deeper layers and longer reasoning paths only when task complexity demands it. This could involve early stopping, dynamic depth control, or routing tasks to lightweight sub-networks.
+    - ABSTRACT: Develop a multi-stage adaptive computation mechanism where LLMs selectively apply deeper layers and longer reasoning paths only when task complexity demands it. This could involve early stopping, dynamic depth control, or routing tasks to lightweight sub-networks.
     - IMPLEMENTATION:
         * Task Complexity Estimation: Introduce a lightweight task complexity classifier that evaluates input queries based on entropy, token distribution, or confidence scores.
         * Dynamic Routing: Use a mixture-of-experts (MoE) approach or layer-wise gating mechanisms to activate specific parts of the model for complex tasks while skipping others for simpler ones.
@@ -47,7 +47,7 @@ _IDEA_GENERATION_DESCRIPTION = """Generate ideas based on the retrieved relevant
         * Pseudocode: Provide a high-level Pseudocode snippet.
 
 * Idea 2: Hallucination-Aware Retrieval-Augmented Generation (RAG)
-    - IDEA: Design a feedback loop-augmented RAG system that integrates hallucination detection and correction during generation. The model validates generated content against a trusted external knowledge base, iteratively refining responses.
+    - ABSTRACT: Design a feedback loop-augmented RAG system that integrates hallucination detection and correction during generation. The model validates generated content against a trusted external knowledge base, iteratively refining responses.
     - IMPLEMENTATION:
         * Knowledge-Enhanced RAG: Combine LLMs with real-time retrieval systems (e.g., semantic search) to fetch relevant knowledge dynamically.
         * Hallucination Detection Module: Add a discriminator or factual consistency checker trained to detect hallucinations by comparing generated content with retrieved data.
