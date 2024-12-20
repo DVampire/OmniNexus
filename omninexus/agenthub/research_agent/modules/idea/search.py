@@ -25,7 +25,8 @@ relevant to the given paper or topic.
 * You MUST provide the base information of the research papers, including the RESEARCH DIRECTION, TITLE, PAPER LINK, DATE, number of CITATIONS, and ABSTRACT.
 * You MUST read the abstract, introduction, and conclusion, limitations, and future work of the research papers. And then, you MUST summarize the CONTRIBUTIONS, LIMITATIONS and IMPROVEMENTS of the research papers.
 
-## Examples
+## For example,  the [research_domain]_papers.md file may look like this:
+(this is the start of the file)
 ** RESEARCH DOMAIN**
 * Large Language Models (LLMs)
 
@@ -33,14 +34,15 @@ relevant to the given paper or topic.
 * Transformer Models
 * Pre-trained Language Models
 
-**PAPER LIST**
-* Paper 1:
-    - RESEARCH DIRECTION: Transformer Models
-    - TITLE: Attention is All You Need
-    - PAPER LINK: https://arxiv.org/abs/1706.03762
-    - DATE: June 2017
-    - CITATIONS: 145444
-    - ABSTRACT: The dominant sequence transduction models are based on complex recurrent or
+** PAPER LIST**
+* ITERATION 1:
+- Paper 1:
+    * RESEARCH DIRECTION: Transformer Models
+    * TITLE: Attention is All You Need
+    * PAPER LINK: https://arxiv.org/abs/1706.03762
+    * DATE: June 2017
+    * CITATIONS: 145444
+    * ABSTRACT: The dominant sequence transduction models are based on complex recurrent or
                 convolutional neural networks that include an encoder and a decoder. The best
                 performing models also connect the encoder and decoder through an attention
                 mechanism. We propose a new simple network architecture, the Transformer,
@@ -55,31 +57,31 @@ relevant to the given paper or topic.
                 best models from the literature. We show that the Transformer generalizes well to
                 other tasks by applying it successfully to English constituency parsing both with
                 large and limited training data.
-    - CONTRIBUTIONS:
-        * The paper introduces the Transformer, a novel architecture that relies entirely on self-attention mechanisms, removing the need for recurrence or convolution.
-        * It significantly improves computational efficiency by enabling better parallelization and faster training on long sequences.
-        * The multi-head attention mechanism is proposed to allow the model to attend to multiple positions and subspaces simultaneously.
-        * Positional encodings are introduced to represent sequence order in the absence of recurrence.
-        * The Transformer achieves state-of-the-art results on machine translation tasks, including WMT 2014 English-to-German and English-to-French benchmarks.
-        * The model demonstrates that attention-based architectures can outperform traditional recurrent models while simplifying overall design.
-    - LIMITATIONS:
-        * The self-attention mechanism has quadratic time and memory complexity, making it computationally expensive for long sequences.
-        * The use of fixed positional encodings limits flexibility when handling sequences longer than those seen during training.
-        * The Transformer requires large datasets and significant computational resources, which can be prohibitive for some users.
-        * Unlike RNNs, the Transformer lacks an inherent sequential inductive bias, which may be a disadvantage for strict sequence modeling tasks.
-        * The model struggles to capture long-range dependencies in extremely long sequences without additional modifications.
-        * Its highly parameterized design can lead to overfitting and poor generalization on tasks with limited training data.
-    - IMPROVEMENTS:
-        * Use sparse or approximate attention to reduce the quadratic complexity of self-attention for long sequences.
-        * Replace fixed positional encodings with learnable or dynamic positional embeddings to enhance flexibility.
-        * Incorporate mechanisms like sliding windows or memory-augmented modules to better handle long-range dependencies and extended contexts.
-* Paper 2:
-    - RESEARCH DIRECTION: Pre-trained Language Models
-    - TITLE: BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding
-    - PAPER LINK: https://arxiv.org/abs/1810.04805
-    - DATE: October 2018
-    - CITATIONS: 121777
-    - ABSTRACT: We introduce BERT (Bidirectional Encoder Representations from Transformers), a new
+    * CONTRIBUTIONS:
+        - The paper introduces the Transformer, a novel architecture that relies entirely on self-attention mechanisms, removing the need for recurrence or convolution.
+        - It significantly improves computational efficiency by enabling better parallelization and faster training on long sequences.
+        - The multi-head attention mechanism is proposed to allow the model to attend to multiple positions and subspaces simultaneously.
+        - Positional encodings are introduced to represent sequence order in the absence of recurrence.
+        - The Transformer achieves state-of-the-art results on machine translation tasks, including WMT 2014 English-to-German and English-to-French benchmarks.
+        - The model demonstrates that attention-based architectures can outperform traditional recurrent models while simplifying overall design.
+    * LIMITATIONS:
+        - The self-attention mechanism has quadratic time and memory complexity, making it computationally expensive for long sequences.
+        - The use of fixed positional encodings limits flexibility when handling sequences longer than those seen during training.
+        - The Transformer requires large datasets and significant computational resources, which can be prohibitive for some users.
+        - Unlike RNNs, the Transformer lacks an inherent sequential inductive bias, which may be a disadvantage for strict sequence modeling tasks.
+        - The model struggles to capture long-range dependencies in extremely long sequences without additional modifications.
+        - Its highly parameterized design can lead to overfitting and poor generalization on tasks with limited training data.
+    * IMPROVEMENTS:
+        - Use sparse or approximate attention to reduce the quadratic complexity of self-attention for long sequences.
+        - Replace fixed positional encodings with learnable or dynamic positional embeddings to enhance flexibility.
+        - Incorporate mechanisms like sliding windows or memory-augmented modules to better handle long-range dependencies and extended contexts.
+- Paper 2:
+    * RESEARCH DIRECTION: Pre-trained Language Models
+    * TITLE: BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding
+    * PAPER LINK: https://arxiv.org/abs/1810.04805
+    * DATE: October 2018
+    * CITATIONS: 121777
+    * ABSTRACT: We introduce BERT (Bidirectional Encoder Representations from Transformers), a new
                 method of pre-training language representations that achieves state-of-the-art results
                 on a wide range of natural language processing tasks. Unlike previous works, BERT is
                 deeply bidirectional, jointly conditioning on both left and right context in all layers,
@@ -88,24 +90,33 @@ relevant to the given paper or topic.
                 the model predicts them, and Next Sentence Prediction (NSP), which helps the model understand
                 sentence relationships. BERT achieves new state-of-the-art results on 11 NLP tasks, including
                 the GLUE benchmark, SQuAD v1.1, and SQuAD v2.0, demonstrating its versatility and effectiveness.
-    - CONTRIBUTIONS:
-        * Introduces BERT, a pre-trained bidirectional Transformer-based model that learns deep contextualized word representations.
-        * Proposes the Masked Language Modeling (MLM) task to enable bidirectional pre-training of Transformers by randomly masking input tokens.
-        * Develops the Next Sentence Prediction (NSP) task to help the model capture sentence-level relationships for downstream tasks.
-        * Demonstrates the effectiveness of BERT on diverse NLP tasks, achieving state-of-the-art performance on GLUE, SQuAD v1.1, and SQuAD v2.0 benchmarks.
-        * Shows that pre-training a deep Transformer on a large text corpus can be fine-tuned to achieve exceptional results on specific tasks with minimal modifications.
-        * Establishes the pre-train, fine-tune paradigm, which has become a foundation for modern NLP research.
-    - LIMITATIONS:
-        * BERT’s quadratic complexity in self-attention limits its scalability to very long sequences.
-        * The masked token prediction leads to a mismatch between pre-training and fine-tuning, as the model does not encounter masked tokens during downstream tasks.
-        * Training BERT requires significant computational resources, making it less accessible to smaller research groups.
-        * BERT does not handle long-term dependencies efficiently, as it has a fixed input length (e.g., 512 tokens).
-        * The model’s fine-tuning process can be unstable for certain tasks, requiring careful hyperparameter tuning.
-        * BERT’s bidirectional nature may lead to information leakage when applied to autoregressive tasks like language generation.
-    - IMPROVEMENTS:
-        * Optimize self-attention mechanisms using sparse attention or sliding windows to handle longer sequences efficiently.
-        * Address pre-training and fine-tuning mismatch by introducing more realistic masking strategies or dynamic masking during fine-tuning.
-        * Develop lightweight or distilled versions of BERT (e.g., DistilBERT) to reduce computational costs while maintaining performance.
+    * CONTRIBUTIONS:
+        - Introduces BERT, a pre-trained bidirectional Transformer-based model that learns deep contextualized word representations.
+        - Proposes the Masked Language Modeling (MLM) task to enable bidirectional pre-training of Transformers by randomly masking input tokens.
+        - Develops the Next Sentence Prediction (NSP) task to help the model capture sentence-level relationships for downstream tasks.
+        - Demonstrates the effectiveness of BERT on diverse NLP tasks, achieving state-of-the-art performance on GLUE, SQuAD v1.1, and SQuAD v2.0 benchmarks.
+        - Shows that pre-training a deep Transformer on a large text corpus can be fine-tuned to achieve exceptional results on specific tasks with minimal modifications.
+        - Establishes the pre-train, fine-tune paradigm, which has become a foundation for modern NLP research.
+    * LIMITATIONS:
+        - BERT’s quadratic complexity in self-attention limits its scalability to very long sequences.
+        - The masked token prediction leads to a mismatch between pre-training and fine-tuning, as the model does not encounter masked tokens during downstream tasks.
+        - Training BERT requires significant computational resources, making it less accessible to smaller research groups.
+        - BERT does not handle long-term dependencies efficiently, as it has a fixed input length (e.g., 512 tokens).
+        - The model’s fine-tuning process can be unstable for certain tasks, requiring careful hyperparameter tuning.
+        - BERT’s bidirectional nature may lead to information leakage when applied to autoregressive tasks like language generation.
+    * IMPROVEMENTS:
+        - Optimize self-attention mechanisms using sparse attention or sliding windows to handle longer sequences efficiently.
+        - Address pre-training and fine-tuning mismatch by introducing more realistic masking strategies or dynamic masking during fine-tuning.
+        - Develop lightweight or distilled versions of BERT (e.g., DistilBERT) to reduce computational costs while maintaining performance.
+
+* ITERATION 2:
+...
+* ITERATION 3:
+...
+* ITERATION 4:
+...
+* ITERATION 5:
+...
 
 ** SUMMARY **
 * RESEARCH DIRECTIONS:
@@ -117,6 +128,7 @@ relevant to the given paper or topic.
 * IMPROVEMENTS:
     - Exploring more efficient and scalable pre-training methods for large language models.
     - Investigating ways to improve the interpretability and explainability of deep learning models.
+(this is the end of the file)
 
 See the description of "code" parameter for more details.
 
