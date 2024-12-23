@@ -19,6 +19,16 @@ _browser_action_space = HighLevelActionSet(
 _IDEA_RELEVANT_RESEARCH_RETRIEVAL_DESCRIPTION = """Interact with the browser using Python code to search for LATEST research papers that are
 relevant to the given paper or topic.
 
+# The python code should interact with the browser using the following functions:
+* Multiple actions can be provided at once, but will be executed sequentially without any feedback from the page.
+More than 2-3 actions usually leads to failure or unexpected behavior.
+
+## For example, the following code snippet can be used to search for relevant research papers:
+fill('a12', 'example with "quotes"')
+click('a51')
+click('48', button='middle', modifiers=['Shift'])
+
+# Search results should be organized in the following format:
 * You MUST first identify the RESEARCH DOMAIN you are addressing, such as Large Language Models (LLMs), Reinforcement Learning and Human Feedback (RLHF), or Multimodal Learning.
 * You MUST identify at least 5 LATEST research directions or topics related to the paper or topic.
 * For each research direction, you MUST search for at least 3 latest research papers that are relevant to that direction.
@@ -27,14 +37,14 @@ relevant to the given paper or topic.
 
 ## For example,  the [research_domain]_papers.md file may look like this:
 (this is the start of the file)
-** RESEARCH DOMAIN**
+** RESEARCH DOMAIN **
 * Large Language Models (LLMs)
 
-** RESEARCH DIRECTIONS**
+** RESEARCH DIRECTIONS **
 * Transformer Models
 * Pre-trained Language Models
 
-** PAPER LIST**
+** PAPER LIST **
 * ITERATION 1:
 - Paper 1:
     * RESEARCH DIRECTION: Transformer Models
@@ -129,16 +139,6 @@ relevant to the given paper or topic.
     - Exploring more efficient and scalable pre-training methods for large language models.
     - Investigating ways to improve the interpretability and explainability of deep learning models.
 (this is the end of the file)
-
-See the description of "code" parameter for more details.
-
-Multiple actions can be provided at once, but will be executed sequentially without any feedback from the page.
-More than 2-3 actions usually leads to failure or unexpected behavior.
-
-Example:
-fill('a12', 'example with "quotes"')
-click('a51')
-click('48', button='middle', modifiers=['Shift'])
 """
 
 _BROWSER_TOOL_DESCRIPTION = """

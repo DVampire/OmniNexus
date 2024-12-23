@@ -50,3 +50,21 @@ DOCKER_IMAGE_SOURCE_TAG=oh_v0.14.0_pjxdkzq7fbr3lud1_dt6vtil7qg8vc4c1
 
 DOCKER_IMAGE_TAG=oh_v0.14.0_image_nikolaik_s_python-nodejs_tag_python3.12-nodejs22
 DOCKER_IMAGE_SOURCE_TAG=oh_v0.14.0_pjxdkzq7fbr3lud1_nk805lkopilz19tl
+
+DOCKER_IMAGE_TAG=oh_v0.14.0_image_nikolaik_s_python-nodejs_tag_python3.12-nodejs22
+DOCKER_IMAGE_SOURCE_TAG=oh_v0.14.0_pjxdkzq7fbr3lud1_dytva9u0xvaud4bs
+
+DOCKER_IMAGE_TAG=oh_v0.14.0_image_nikolaik_s_python-nodejs_tag_python3.12-nodejs22
+DOCKER_IMAGE_SOURCE_TAG=oh_v0.14.0_pjxdkzq7fbr3lud1_nk805lkopilz19tl
+
+DOCKER_IMAGE_TAG=oh_v0.14.0_image_nikolaik_s_python-nodejs_tag_python3.12-nodejs22
+DOCKER_IMAGE_SOURCE_TAG=oh_v0.14.0_pjxdkzq7fbr3lud1_ap4hbti5shfar478
+
+DOCKER_IMAGE_TAG=oh_v0.14.0_image_nikolaik_s_python-nodejs_tag_python3.12-nodejs22
+DOCKER_IMAGE_SOURCE_TAG=oh_v0.14.0_pjxdkzq7fbr3lud1_i9q6rgbbc6m9rn6c
+
+DOCKER_IMAGE_TAG=oh_v0.14.0_image_nikolaik_s_python-nodejs_tag_python3.12-nodejs22
+DOCKER_IMAGE_SOURCE_TAG=oh_v0.14.0_pjxdkzq7fbr3lud1_i9q6rgbbc6m9rn6c
+
+DOCKER_IMAGE_TAG=oh_v0.14.0_image_nikolaik_s_python-nodejs_tag_python3.12-nodejs22
+DOCKER_IMAGE_SOURCE_TAG=oh_v0.14.0_pjxdkzq7fbr3lud1_iw9rjkdynnnr91sz
