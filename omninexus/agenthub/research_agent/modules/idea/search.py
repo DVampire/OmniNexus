@@ -32,7 +32,7 @@ click('48', button='middle', modifiers=['Shift'])
 * You MUST first identify the RESEARCH DOMAIN you are addressing, such as Large Language Models (LLMs), Reinforcement Learning and Human Feedback (RLHF), or Multimodal Learning.
 * You MUST identify at least 5 LATEST research directions or topics related to the paper or topic.
 * For each research direction, you MUST search for at least 3 latest research papers that are relevant to that direction.
-* You MUST provide the base information of the research papers, including the RESEARCH DIRECTION, TITLE, PAPER LINK, DATE, number of CITATIONS, and ABSTRACT.
+* You MUST provide the base information of the research papers, including the RESEARCH DIRECTION, TITLE, PAPER LINK, DATE, number of CITED BY, and ABSTRACT.
 * You MUST read the abstract, introduction, and conclusion, limitations, and future work of the research papers. And then, you MUST summarize the CONTRIBUTIONS, LIMITATIONS and IMPROVEMENTS of the research papers.
 
 ## For example,  the [research_domain]_papers.md file may look like this:
@@ -51,7 +51,7 @@ click('48', button='middle', modifiers=['Shift'])
     * TITLE: Attention is All You Need
     * PAPER LINK: https://arxiv.org/abs/1706.03762
     * DATE: June 2017
-    * CITATIONS: 145444
+    * CITED BY: 145444
     * ABSTRACT: The dominant sequence transduction models are based on complex recurrent or
                 convolutional neural networks that include an encoder and a decoder. The best
                 performing models also connect the encoder and decoder through an attention
@@ -90,7 +90,7 @@ click('48', button='middle', modifiers=['Shift'])
     * TITLE: BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding
     * PAPER LINK: https://arxiv.org/abs/1810.04805
     * DATE: October 2018
-    * CITATIONS: 121777
+    * CITED BY: 121777
     * ABSTRACT: We introduce BERT (Bidirectional Encoder Representations from Transformers), a new
                 method of pre-training language representations that achieves state-of-the-art results
                 on a wide range of natural language processing tasks. Unlike previous works, BERT is

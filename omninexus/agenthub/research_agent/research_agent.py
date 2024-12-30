@@ -19,6 +19,7 @@ from omninexus.events.action import (
     FileEditAction,
     IdeaGenerationAction,
     IPythonRunCellAction,
+    LatexAction,
     MessageAction,
     ProjectAction,
     RelevantResearchRetrievalAction,
@@ -30,6 +31,7 @@ from omninexus.events.observation import (
     FileEditObservation,
     IdeaGenerationObservation,
     IPythonRunCellObservation,
+    LatexObservation,
     ProjectObservation,
     RelevantResearchRetrievalOutputObservation,
     UserRejectObservation,
@@ -160,6 +162,7 @@ class ResearchAgent(Agent):
                 RelevantResearchRetrievalAction,
                 IdeaGenerationAction,
                 ProjectAction,
+                LatexAction,
             ),
         ) or (
             isinstance(action, (AgentFinishAction, CmdRunAction))
@@ -257,6 +260,12 @@ class ResearchAgent(Agent):
                 obs.content + obs.interpreter_details, max_message_chars
             )
             text += f'\n[Project command finished with exit code {obs.exit_code}]'
+            message = Message(role='user', content=[TextContent(text=text)])
+        elif isinstance(obs, LatexObservation):
+            text = truncate_content(
+                obs.content + obs.interpreter_details, max_message_chars
+            )
+            text += f'\n[Latex command finished with exit code {obs.exit_code}]'
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, IdeaGenerationObservation):
             text = truncate_content(

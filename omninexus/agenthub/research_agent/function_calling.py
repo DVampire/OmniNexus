@@ -16,6 +16,15 @@ from omninexus.agenthub.research_agent.modules.idea import (
     IdeaGenerationTool,
     RelevantResearchRetrievalTool,
 )
+from omninexus.agenthub.research_agent.modules.latex import (
+    LatexAbstractTool,
+    LatexConclusionTool,
+    LatexDesignTool,
+    LatexEmpiricalResultsTool,
+    LatexIntroductionTool,
+    LatexLimitationsAndFutureWorkTool,
+    LatexMethodTool,
+)
 from omninexus.agenthub.research_agent.modules.project import (
     ProjectConfigurationTool,
     ProjectCriterionTool,
@@ -51,6 +60,7 @@ from omninexus.events.action import (
     FileEditAction,
     IdeaGenerationAction,
     IPythonRunCellAction,
+    LatexAction,
     MessageAction,
     ProjectAction,
     RelevantResearchRetrievalAction,
@@ -120,6 +130,8 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                 action = IdeaGenerationAction(**arguments)
             elif tool_call.function.name.startswith('project_'):
                 action = ProjectAction(**arguments)
+            elif tool_call.function.name.startswith('latex_'):
+                action = LatexAction(**arguments)
             else:
                 raise RuntimeError(f'Unknown tool call: {tool_call.function.name}')
 
@@ -149,6 +161,12 @@ def get_tools(
     codeact_enable_jupyter: bool = True,
 ) -> list[ChatCompletionToolParam]:
     tools = [FinishTool, CmdRunTool, StrReplaceEditorTool]
+
+    modules_idea = [
+        RelevantResearchRetrievalTool,
+        IdeaGenerationTool,
+    ]
+
     modules_project = [
         ProjectConfigurationTool,
         ProjectCriterionTool,
@@ -167,12 +185,17 @@ def get_tools(
         ProjectUtilsTool,
     ]
 
-    modules_idea = [
-        RelevantResearchRetrievalTool,
-        IdeaGenerationTool,
+    modules_latex = [
+        LatexDesignTool,
+        LatexAbstractTool,
+        LatexIntroductionTool,
+        LatexMethodTool,
+        LatexEmpiricalResultsTool,
+        LatexLimitationsAndFutureWorkTool,
+        LatexConclusionTool,
     ]
 
-    tools = modules_idea + modules_project + tools
+    tools = modules_idea + modules_project + modules_latex + tools
 
     tools.append(BrowserTool)
     tools.append(IPythonTool)

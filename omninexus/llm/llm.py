@@ -352,11 +352,11 @@ class LLM(RetryMixin, DebugMixin):
                 self.config.max_input_tokens = self.model_info['max_input_tokens']
             else:
                 # Safe fallback for any potentially viable model
-                self.config.max_input_tokens = 4096
+                self.config.max_input_tokens = 200000
 
         if self.config.max_output_tokens is None:
             # Safe default for any potentially viable model
-            self.config.max_output_tokens = 4096
+            self.config.max_output_tokens = 8192
             if self.model_info is not None:
                 # max_output_tokens has precedence over max_tokens, if either exists.
                 # litellm has models with both, one or none of these 2 parameters!
