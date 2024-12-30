@@ -1,1 +1,3 @@
 # OmniNexus
+
+ruff check . --fix

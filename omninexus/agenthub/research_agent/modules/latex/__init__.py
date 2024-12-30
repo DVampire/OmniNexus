@@ -4,5 +4,7 @@ from .empirical_results import LatexEmpiricalResultsTool
 from .introduction import LatexIntroductionTool
 from .latex_design import LatexDesignTool
 from .limitations_and_future_work import LatexLimitationsAndFutureWorkTool
+from .main import LatexMainTool
 from .method import LatexMethodTool
 from .related_work import LatexRelatedWorkTool
+from .scripts import LatexScriptsTool
