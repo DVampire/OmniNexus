@@ -19,7 +19,7 @@ batch_size = 32
 num_warmup_epochs = 10
 
 
-transform = dict(type='ImageTransform', mode=None)
+transform = dict(type='ImageTransform', mode='')
 
 train_transform = deepcopy(transform)
 train_transform['mode'] = 'train'
@@ -30,7 +30,7 @@ val_transform['mode'] = 'valid'
 test_transform = deepcopy(transform)
 test_transform['mode'] = 'test'
 
-dataset = dict(type='ImageDataset', image_dir=None, transform=None)
+dataset: dict[str, str] = dict(type='ImageDataset', image_dir='', transform='')
 
 train_dataset = deepcopy(dataset)
 train_dataset.update(

@@ -38,25 +38,21 @@ The related work section positions your research within the existing body of lit
 * Avoid a long list of references without meaningful synthesis.
 * Ensure that the limitations of prior work clearly justify your research approach.
 
-NOTE: When cite a reference in LaTeX, you MUST add the BibTeX of it in the file main.bib. If the item is already in the main.bib, you can directly use the citation key in the LaTeX file.
-
 ** Example Related Work **
 For demonstration only. Adapt it to match your specific research and results. Here is an example related work section for a research paper:
 (this is the start of sections/related_work.tex)
 \section{Related Work}
 \label{sec:related_work}
 
-The field of generative models has witnessed significant advancements in recent years, driven by the development of autoregressive (AR) and diffusion-based methods. In this section, we review the related work across three key areas: autoregressive modeling, diffusion models, and multi-scale approaches.
+Deep reinforcement learning (DRL) has shown promise in real-time strategy (RTS) games, yet the combination of high-dimensional action spaces and non-stationary environments remains challenging. Researchers commonly address these obstacles through hierarchical reinforcement learning, curriculum learning, and multi-agent decision-making.
 
-\subsection{Autoregressive Modeling}
-Autoregressive models have achieved remarkable success in various domains, particularly in natural language processing (NLP)~\cite{brown2020language, radford2019language} and audio generation~\cite{oord2016wavenet}. These models rely on a sequential token prediction strategy, where each token is conditioned on its predecessors, making them powerful for capturing sequential dependencies. In the domain of computer vision, pioneering works such as VQ-VAE~\cite{van2017neural} and DALL-E~\cite{ramesh2021zero} introduced the use of visual tokenization to adapt autoregressive techniques for image generation. However, these methods are limited by their reliance on raster-scan token ordering, which can result in inefficiencies and suboptimal scalability~\cite{esser2021taming}.
+\subsection{Hierarchical Reinforcement Learning} Hierarchical reinforcement learning (HRL) decomposes tasks into high-level strategies and low-level actions, easing exploration in large state-action spaces~\cite{jiang2024ob, zhang2019hierarchical}. Frameworks such as OB-HPPO~\cite{jiang2024ob} demonstrate the effectiveness of multi-level coordination, while general HRL methods~\cite{nachum2018data, levy2019hierarchical} excel in complex control tasks. However, many HRL approaches depend on predefined hierarchies and struggle with stability in large-scale, multi-agent RTS settings.
 
-\subsection{Diffusion Models}
-Diffusion models~\cite{ho2020denoising, song2020score} have emerged as a dominant paradigm for high-quality image synthesis, leveraging iterative denoising processes to model data distributions. Recent advancements, such as the Diffusion Transformer (DiT)~\cite{peebles2022scalable} and Stable Diffusion~\cite{rombach2022high}, have demonstrated state-of-the-art performance on various benchmarks, outperforming many autoregressive counterparts in terms of both quality and diversity. Despite their success, diffusion models are computationally intensive and require numerous forward passes during inference, which limits their applicability in real-time scenarios~\cite{nichol2021improved}.
+\subsection{Curriculum Learning} Curriculum learning progressively introduces complexity to improve training efficiency and stability in DRL~\cite{bengio2009curriculum, florensa2017reverse}. For instance, incrementally challenging tasks accelerate skill acquisition in StarCraft micromanagement~\cite{shao2018starcraft}, and automated curriculum design~\cite{graves2017automated} has further broadened applicability. Nonetheless, dynamic RTS games complicate this process, as static or manually tuned curricula may fail to adapt to rapidly changing scenarios.
 
-\subsection{Comparison with Our Work}
-Our proposed Visual AutoRegressive (VAR) modeling diverges from traditional raster-scan autoregressive techniques by redefining the prediction process as “next-scale prediction.” This approach draws inspiration from multi-scale designs~\cite{lin2017feature, chen2018encoder} and integrates them into an autoregressive framework. Unlike diffusion models~\cite{ho2020denoising, peebles2022scalable}, VAR achieves comparable or superior image quality with significantly faster inference, making it more suitable for practical applications. Furthermore, VAR models exhibit scaling laws and zero-shot generalization capabilities akin to large language models~\cite{brown2020language}, positioning them as a promising direction for unified visual generative learning.
-(this is the end of sections/related_work.tex)
+\subsection{Multi-Agent Decision-Making} Multi-agent reinforcement learning (MARL) emphasizes cooperation and competition among multiple agents~\cite{zhang2021multi, lowe2017multi}. Centralized training with decentralized execution (CTDE), exemplified by methods like QMIX and COMA~\cite{foerster2018counterfactual, rashid2018qmix}, fosters coordinated strategies in RTS games, while platforms such as Gym-$\mu$RTS~\cite{huang2021gym} streamline MARL experimentation. Yet, scalability and robustness persist as major hurdles when the number of agents grows and the environment remains non-stationary.
+
+\paragraph{Comparison with Our Work} Our framework combines HRL and curriculum learning with state-sharing mechanisms to stabilize training and reduce exploration complexity in large-scale, multi-agent RTS environments. By tackling hierarchical design constraints, curriculum adaptability, and MARL scalability, our approach outperforms state-of-the-art baselines by 15\%--25\% in win rates across diverse RTS scenarios.
 
 ** Example BibTeX Entry **
 Ensure all citations used in the section are added to the main.bib file:

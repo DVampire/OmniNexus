@@ -1,6 +1,7 @@
 import os
 import shutil
 from argparse import Namespace
+from typing import Any, Dict
 
 from mmengine import Config
 
@@ -13,7 +14,7 @@ class ConfigBuilder:
         self.config_path = config_path
         self.args = args
         self.config = Config.fromfile(filename=config_path)
-        self._cfg_options = {}
+        self._cfg_options: Dict[str, Any] = {}
         self._parse_args()
 
     def _parse_args(self):

@@ -327,6 +327,14 @@ help:
 	@echo "  $(GREEN)docker-run$(RESET)          - Run the OmniNexus application, starting both backend and frontend servers in Docker."
 	@echo "  $(GREEN)help$(RESET)                - Display this help message, providing information on available targets."
 
+
+runtime:
+	@echo "$(YELLOW)Copy files...$(RESET)"
+	@poetry run python3 omninexus/runtime/utils/runtime_build.py --base_image nikolaik/python-nodejs:python3.12-nodejs22 --build_folder containers/runtime
+	@echo "$(YELLOW)Building runtime...$(RESET)"
+	@poetry run python3 omninexus/runtime/utils/runtime_build.py
+	@echo "$(GREEN)Runtime built successfully.$(RESET)"
+
 # Phony targets
 .PHONY: build check-dependencies check-python check-npm check-docker check-poetry install-python-dependencies install-frontend-dependencies install-pre-commit-hooks lint start-backend start-frontend run run-wsl setup-config setup-config-prompts help
 .PHONY: docker-dev docker-run

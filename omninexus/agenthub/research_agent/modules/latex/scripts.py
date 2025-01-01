@@ -65,6 +65,7 @@ echo "Cleaned up auxiliary files."
 (this is the end of scripts/clean.sh)
 
 ** Example Makefile **
+(this is the start of Makefile)
 # Makefile
 #
 # Use make build to compile the LaTeX project
@@ -74,11 +75,13 @@ echo "Cleaned up auxiliary files."
 
 all: build
 
+# Use <Tab> for indentation
 build:
-\tbash scripts/build.sh
+    @bash scripts/build.sh
 
+# Use <Tab> for indentation
 clean:
-\tbash scripts/clean.sh
+    @bash scripts/clean.sh
 (this is the end of Makefile)
 """
 

@@ -4,11 +4,21 @@ This is similar to the functionality of `CodeActResponseParser`.
 """
 
 import os.path
+from pathlib import Path
 
 from litellm import (
     ChatCompletionToolParam,
     ChatCompletionToolParamFunctionChunk,
 )
+
+MAIN_STY_FILE = os.path.join(
+    str(Path(__file__).resolve().parents[2]),
+    'template',
+    'latex',
+    'NeurIPS_2024',
+    'main.sty',
+)
+MAIN_STY_FILE = os.path.abspath(MAIN_STY_FILE)
 
 _LATEX_MAIN_DESCRIPTION = r"""Write the main.bib, main.sty and main.tex files for a research paper.
 
@@ -43,9 +53,6 @@ You can split the main files into three key parts: bibliography, style definitio
 ...
 (this is the end of main.bib)
 
-** Example main.sty **
-Because we have a template for main.sty, we don't need to write it here. You can copy the template from the file `main.sty` in the `../../template/latex/NeurIPS_2024/`.
-
 ** Example main.tex **
 (this is the start of main.tex)
 \documentclass{article}
@@ -60,29 +67,30 @@ Because we have a template for main.sty, we don't need to write it here. You can
 \usepackage{nicefrac}       % compact symbols for 1/2, etc.
 \usepackage{microtype}      % microtypography
 \usepackage{xcolor}         % colors
-\usepackage{appendix}
+\usepackage{appendix}       % appendix
+\usepackage{amsmath}        % For math symbols like \mathcal
+\usepackage{algorithm}      % To define the algorithm environment
+\usepackage{algpseudocode}  % For algorithmic environment
+\usepackage{tikz}           % Core TikZ package and libraries
+\usetikzlibrary{
+    positioning,            % For relative node positioning
+    shapes,                 % Various node shapes
+    arrows,                 % Arrow styles
+    decorations.pathreplacing,  % For braces
+    calc,                   % Coordinate calculations
+    backgrounds             % Background elements
+}
+\usepackage{float}          % Figure placement control.
+\usepackage{graphicx}       % For figure size adjustments if needed
+\usepackage{booktabs}       % For professional tables
+\usepackage{pgfplots}       % For plots
+\pgfplotsset{compat=newest} % To avoid warnings
+\usepackage{enumitem}       % For customizing lists
+\usepackage{xcolor}         % For color
 
 \title{Deep Reinforcement Learning in Real-Time Strategy Games}
 
-\author{%
-  David S.~Hippocampus\thanks{Use footnote for providing further information
-    about author (webpage, alternative address)---\emph{not} for acknowledging
-    funding agencies.} \\
-  Department of Computer Science\\
-  Cranberry-Lemon University\\
-  Pittsburgh, PA 15213 \\
-  \texttt{hippo@cs.cranberry-lemon.edu} \\
-  % examples of more authors
-  % \And
-  % Coauthor \\
-  % Affiliation \\
-  % Address \\
-  % \texttt{email} \\
-}
-
-
 \begin{document}
-
 
 \maketitle
 
@@ -107,15 +115,20 @@ Because we have a template for main.sty, we don't need to write it here. You can
 
 \newpage
 
-\newpage
 \appendix
 \appendixpage
 
 \end{document}
 (this is the end of main.tex)
+
+** Example main.sty **
+Because the main.sty file is provided. You DO NOT need to write it. You can copy the provided `main.sty` file to the `main.sty` file in the terminal.
+* The template absolute path for the main.sty file is specified as:
 """
 
-_PARAMETER_COMMAND_DESCRIPTION = 'The bash command to generate the main.bib, main.sty and main.tex files in the terminal.'
+_LATEX_MAIN_DESCRIPTION += MAIN_STY_FILE
+
+_PARAMETER_COMMAND_DESCRIPTION = """The bash command to generate or copy the main.bib, main.tex and main.sty files in the terminal."""
 
 LatexMainTool = ChatCompletionToolParam(
     type='function',

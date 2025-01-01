@@ -25,6 +25,7 @@ from omninexus.agenthub.research_agent.modules.latex import (
     LatexLimitationsAndFutureWorkTool,
     LatexMainTool,
     LatexMethodTool,
+    LatexRelatedWorkTool,
     LatexScriptsTool,
 )
 from omninexus.agenthub.research_agent.modules.project import (
@@ -197,6 +198,7 @@ def get_tools(
         LatexConclusionTool,
         LatexScriptsTool,
         LatexMainTool,
+        LatexRelatedWorkTool,
     ]
 
     tools = modules_idea + modules_project + modules_latex + tools

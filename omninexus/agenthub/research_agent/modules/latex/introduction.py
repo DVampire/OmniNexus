@@ -41,26 +41,28 @@ The introduction sets the stage for your research, providing context, challenges
 * Avoid overloading with results; save detailed findings for later sections.
 * End with a brief contributions summary of your work.
 
-NOTE: When cite a reference in LaTeX, you MUST add the BibTeX of it in the file main.bib. If the item is already in the main.bib, you can directly use the citation key in the LaTeX file.
-
 ** Example Introduction **
 For demonstration only. Adapt it to match your specific research and results. Here is an example introduction for a research paper:
 (this is the start of sections/introduction.tex)
 \section{Introduction}
 \label{sec:introduction}
-Deep reinforcement learning (DRL) has achieved remarkable success across various domains, including robotics~\cite{kober2013reinforcement}, finance~\cite{deng2016deep}, and gaming~\cite{mnih2015human}. Despite these advancements, its application to real-time strategy (RTS) games presents significant challenges due to the high-dimensional action spaces, complex multi-agent dynamics, and non-stationary environments~\cite{vinyals2019grandmaster}. These challenges highlight the limitations of existing DRL methods, which often struggle with scalability, exploration, and stability in dynamic settings~\cite{silver2016mastering, lillicrap2015continuous}.
 
-Addressing these issues is critical for advancing the state-of-the-art in DRL and enabling robust performance in complex environments. Current approaches typically focus on flat policy learning~\cite{schulman2017proximal}, which fails to capture the hierarchical nature of decision-making required in RTS games. Moreover, they lack effective mechanisms for handling non-stationary dynamics, resulting in suboptimal learning outcomes and poor generalization across tasks~\cite{haarnoja2018soft}.
+Deep reinforcement learning (DRL) has garnered significant attention in recent years due to its remarkable success in solving complex problems across diverse domains. In robotics, DRL has enabled the development of adaptive control policies for real-world tasks such as manipulation and locomotion~\cite{kober2013reinforcement}. In finance, DRL has shown potential for optimizing portfolio management and algorithmic trading strategies by capturing complex temporal patterns in financial data~\cite{deng2016deep}. Moreover, DRL has revolutionized the gaming industry, achieving superhuman performance in games ranging from Atari classics to the strategic board game Go~\cite{mnih2015human, silver2016mastering}.
 
-To tackle these challenges, we propose a novel hierarchical DRL framework that decomposes decision-making into strategic and tactical layers. The strategic layer focuses on high-level planning, while the tactical layer handles fine-grained actions. By integrating state-sharing and curriculum training~\cite{bengio2009curriculum}, our approach improves exploration efficiency and stabilizes the learning process in dynamic environments.
+Despite these successes, extending DRL to real-time strategy (RTS) games presents a set of unique and formidable challenges. RTS games, characterized by high-dimensional action spaces, complex multi-agent dynamics, and non-stationary environments, push the limits of current DRL methodologies~\cite{vinyals2019grandmaster}. Unlike games with discrete, sequential decision-making, RTS games demand continuous coordination across multiple units, requiring sophisticated strategies and real-time adaptability. These challenges expose the limitations of existing DRL methods, particularly in their ability to scale effectively, explore vast action spaces, and maintain stability in dynamic, adversarial settings~\cite{silver2016mastering, lillicrap2015continuous}.
+
+Addressing these limitations is critical for advancing DRL's applicability to environments that demand both scalability and robust decision-making. Existing approaches, such as flat policy learning, focus on direct action mapping without adequately capturing the hierarchical structure inherent in many complex tasks~\cite{schulman2017proximal}. Flat policies struggle to manage the layered decision-making required in RTS games, where long-term strategic planning must coexist with fine-grained tactical execution. Furthermore, the non-stationary dynamics of RTS games exacerbate the difficulties, as agents must adapt to evolving opponent strategies and game states. Traditional DRL methods often fail to generalize effectively in such settings, resulting in suboptimal learning outcomes and performance degradation~\cite{haarnoja2018soft}.
+
+To overcome these challenges, we propose a novel hierarchical DRL framework specifically tailored for RTS games. This framework introduces a two-tiered structure, decomposing decision-making into strategic and tactical layers. The strategic layer is responsible for high-level planning and resource allocation, while the tactical layer handles micro-level actions and unit control. By incorporating state-sharing mechanisms and curriculum training techniques~\cite{bengio2009curriculum}, our approach enhances exploration efficiency and stabilizes learning in highly dynamic environments. State-sharing ensures that the two layers remain aligned and mutually informed, while curriculum training provides a structured progression of learning objectives, reducing the complexity of exploration in early stages.
 
 Our key contributions are as follows:
-\begin{itemize}
+\begin{itemize}[left=0em]
     \item We introduce a hierarchical DRL framework that decouples decision-making into strategic and tactical layers, enabling scalable and efficient learning.
     \item We propose state-sharing and curriculum training mechanisms to address the challenges of exploration and non-stationarity.
     \item We demonstrate the effectiveness of our framework through experiments on multiple large-scale RTS scenarios, achieving a 15\%–25\% higher win rate compared to existing methods.
-    \item We conduct ablation studies to validate the importance of the hierarchical design and curriculum training in improving performance and robustness.
 \end{itemize}
+
+By addressing the core challenges of scalability, exploration, and stability in RTS games, this work represents a significant step forward in advancing DRL's applicability to complex, real-world environments.
 (this is the end of sections/introduction.tex)
 
 ** Example BibTeX Entry **

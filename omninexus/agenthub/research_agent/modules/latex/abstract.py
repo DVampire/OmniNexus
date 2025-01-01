@@ -15,20 +15,20 @@ _LATEX_ABSTRACT_DESCRIPTION = r"""Write the ABSTRACT section of a research paper
 ** Purpose and Structure **
 * Audience: The abstract is the first point of contact for potential readers (including reviewers), guiding them on whether to read the full paper.
 * Style: Clearly state what you did, why it matters, what results you got, and how it impacts the field—using concise language and minimal jargon.
-* Brevity: Abstract should be typically 200 words in English. Use this space to efficiently convey your research’s main idea.
+* Brevity: Abstract should be typically 250 words in English. Use this space to efficiently convey your research’s main idea.
 
 ** Common Structure **
 You can split the abstract into four key parts or merge them into a single, concise paragraph.
-* Motivation / Context
+* Motivation
     - Briefly introduce the background of your research area or problem.
     - Explain why it is important or worth investigating.
-* Problem Statement / Objective
+* Problem Statement
     - Clearly state the problem or research goal.
     - Highlight gaps or challenges in existing solutions to show why your work is innovative.
-* Methods / Approach
+* Methods
     - Give a brief overview of your proposed method or framework.
     - Point out what’s new or improved compared to previous work.
-* Results / Contributions
+* Results
     - Summarize your main experimental or theoretical findings.
     - Emphasize the value or potential impact of these results (academic or applied).
     - If experiments show significant improvements or theoretical proofs confirm feasibility, mention them briefly.
@@ -43,7 +43,8 @@ You can split the abstract into four key parts or merge them into a single, conc
 For demonstration only. Adapt it to match your specific research and results. Here is an example abstract for a research paper:
 (this is the start of sections/abstract.tex)
 \begin{abstract}
-Deep reinforcement learning (DRL) has shown remarkable success in many tasks, but applying it to real-time strategy (RTS) games is still difficult due to high-dimensional action spaces and non-stationary environments. We propose a hierarchical DRL framework that splits decision-making into strategic and tactical layers. Through state-sharing and curriculum training, our method simplifies exploration and stabilizes learning. Experiments on multiple large-scale RTS scenarios show a 15%–25% higher win rate compared to existing methods. Ablation studies confirm that the hierarchical design and curriculum are crucial for robust performance. Our results suggest this framework can learn scalable and efficient policies in complex multi-agent settings.
+\label{sec:abstract}
+Deep reinforcement learning (DRL) has achieved notable success in various fields, yet applying it to real-time strategy (RTS) games remains challenging due to large action spaces, vast states, and complex multi-agent dynamics. We propose a hierarchical DRL framework that splits decision-making into strategic and tactical layers, enabling efficient handling of macro-level tasks such as resource management and army composition alongside micro-level tasks like unit positioning and targeting. This decomposition reduces exploration complexity and stabilizes learning by assigning distinct roles to each layer. A shared state mechanism ensures both layers access vital global information, promoting coherent decisions across temporal and spatial scales. Moreover, we employ a curriculum training approach in which the agent progresses from simpler to more demanding scenarios, fostering robust policies capable of adapting to large-scale RTS environments. Experimental evaluations confirm that our method achieves a 15\%–25\% higher win rate compared to baselines, underscoring its potential to learn scalable and efficient strategies in non-stationary settings. Ablation studies further highlight the importance of both the hierarchical architecture and the curriculum, as removing either component significantly degrades performance and stability. Overall, our work demonstrates that structured, multi-level decision-making can effectively address the inherent complexity of RTS games, paving the way for more powerful AI systems capable of integrating strategic foresight and tactical precision in real time.
 \end{abstract}
 (this is the end of sections/abstract.tex)
 """

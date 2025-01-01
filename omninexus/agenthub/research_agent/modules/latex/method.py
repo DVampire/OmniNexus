@@ -69,10 +69,6 @@ Common structure is merely a guide to the main content. You SHOULD not directly 
         * Keep descriptions concise and avoid redundancy. Use established academic terminology and define any new terms or abbreviations.
     - Citations and Comparisons
         * Where necessary, compare your method to existing approaches and cite relevant work. While Related Work and Experiments sections often cover this, brief comparisons in the Method section can highlight your contributions.
-* Avoid Unnecessary Implementation or Data Processing Details
-    - Implementation details or data preprocessing steps can be included in supplementary materials or an open-source repository.
-    - Focus on the logic and theory behind your method rather than implementation specifics.
-    - Similarly, detailed data handling (e.g., cleaning, formatting, splitting) is better suited for the Empirical Result or Appendix sections.
 * Smooth Transition to Experiments
     - Conclude the Method section with a brief transition to the Experiments section. For example, outline the core questions or evaluation metrics to be validated in the experiments, creating anticipation for the results.
 
@@ -83,11 +79,8 @@ Common structure is merely a guide to the main content. You SHOULD not directly 
 * While describing the design of a module, the MOTIVATION and BACKGROUND of the design needs to be explained in detail.
 * Focus on the innovation and rationale of your method, linking it to the problem statement.
 * Include references to support the theoretical foundation and highlight connections to prior work.
-* Minimize the use of itemized lists unless essential; consider using i), ii), iii), etc., within cohesive paragraphs for smoother readability.
 * Avoid implementation-specific details; keep the focus on the conceptual framework.
 * End with a transition to the next section, setting up the context for experimental validation.
-
-NOTE: When cite a reference in LaTeX, you MUST add the BibTeX of it in the file main.bib. If the item is already in the main.bib, you can directly use the citation key in the LaTeX file.
 
 ** Example Method **
 For demonstration only. Adapt it to match your specific research and results. Here is an example method for a research paper:
@@ -176,9 +169,11 @@ To facilitate efficient exploration, we incorporate intrinsic motivation through
 \end{equation}
 where $f(s)$ projects states into the same space as $g_t$.
 
-\subsection{Training Process}
-Training alternates between updating the strategic and tactical policies using prioritized replay and gradient-based optimization:
+\subsection{Training and Inference Processes}
 
+The training and inference processes for hierarchical deep reinforcement learning (DRL) are outlined below. Training alternates between updating the strategic and tactical policies, while inference involves generating actions based on trained policies.
+
+\begin{minipage}[t]{0.48\textwidth}
 \begin{algorithm}[H]
 \caption{Hierarchical DRL Training}
 \begin{algorithmic}[1]
@@ -202,13 +197,24 @@ Training alternates between updating the strategic and tactical policies using p
 \EndFor
 \end{algorithmic}
 \end{algorithm}
-
-\subsection{Implementation Considerations}
-The framework employs transformer-based architectures for the strategic layer to capture temporal dependencies and multi-layer perceptrons (MLPs) for the tactical layer to ensure efficient computation. Techniques like gradient clipping and replay prioritization stabilize training and improve sample efficiency.
-
-Compared to monolithic reinforcement learning methods, this approach effectively abstracts long-term dependencies, enhances exploration via goal-driven behavior, and facilitates transferability across tasks.
-
-\noindent The next section presents empirical results demonstrating the effectiveness of the proposed framework.
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.48\textwidth}
+\begin{algorithm}[H]
+\caption{Hierarchical DRL Inference}
+\begin{algorithmic}[1]
+\State Load trained policies $\pi_{\theta_s}$, $\pi_{\theta_t}$
+\State Initialize state $s_0$
+\For{$t=0$ to $T$}
+    \If{$t \bmod k = 0$}
+        \State Generate goal $g_t = \pi_{\theta_s}(s_t)$
+    \EndIf
+    \State Execute action $a_t = \pi_{\theta_t}(s_t, g_t)$
+    \State Observe next state $s_{t+1}$
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+\end{minipage}
 (this is the end of sections/method.tex)
 
 ** Example BibTeX Entry **
@@ -250,64 +256,66 @@ Compared to monolithic reinforcement learning methods, this approach effectively
     % Modern style definitions
     box/.style={
         rectangle,
-        draw=gray!50,
+        draw=black!40,
         fill=white,
         minimum width=2.8cm,
         minimum height=1.2cm,
         text centered,
-        rounded corners=3pt,
-        font=\sffamily
+        rounded corners=4pt,
+        font=\sffamily,
+        drop shadow={shadow xshift=0.8pt, shadow yshift=-0.8pt, opacity=0.3}
     },
     layer/.style={
         rectangle,
         draw=none,
-        fill=blue!10,
-        minimum width=12cm,
-        minimum height=3cm,
-        rounded corners=5pt,
+        fill=blue!8,
+        minimum width=13cm,
+        minimum height=3.2cm,
+        rounded corners=6pt,
         font=\sffamily\bfseries
     },
     env/.style={
         rectangle,
-        draw=gray!50,
+        draw=none,
         fill=green!5,
-        minimum width=12cm,
-        minimum height=2cm,
-        rounded corners=5pt,
-        font=\sffamily
+        minimum width=13cm,
+        minimum height=2.2cm,
+        rounded corners=6pt,
+        font=\sffamily\bfseries
     },
     arrow/.style={
-        -stealth,
+        ->,
+        >=stealth,
         thick,
-        draw=gray!70
+        draw=black!50
     },
     darrow/.style={
-        -stealth,
+        ->,
+        >=stealth,
         thick,
-        draw=gray!70,
+        draw=black!50,
         dashed
     },
     label/.style={
         font=\sffamily\small,
-        text=gray!70
+        text=black!60
     }
 ]
-
     % Background layers
     \node[layer] (strategic_layer) at (0,2) {Strategic Layer};
     \node[layer] (tactical_layer) at (0,-2) {Tactical Layer};
     \node[env] (env_layer) at (0,-5) {Environment};
 
-    % Strategic components
+    % Strategic layer components
     \node[box] (state) at (-4,2) {State $s_t$};
     \node[box] (strategic) at (0,2) {Strategic Policy $\pi_{\theta_s}$};
     \node[box] (goal) at (4,2) {Goal $g_t$};
 
-    % Tactical components
+    % Tactical layer components
     \node[box] (tactical) at (0,-2) {Tactical Policy $\pi_{\theta_t}$};
     \node[box] (action) at (4,-2) {Action $a_t$};
 
-    % Environment components
+    % Environment layer components
     \node[box] (next_state) at (-4,-5) {Next State $s_{t+1}$};
     \node[box] (reward) at (4,-5) {Reward $r_t$};
 
@@ -321,23 +329,21 @@ Compared to monolithic reinforcement learning methods, this approach effectively
     \draw[arrow] (next_state) -- (-4,-3.5);
     \draw[arrow] (reward) -- (4,-3.5);
 
-    % Feedback arrows
-    \draw[darrow] (reward) -- (4,0) -- (strategic);
+    \draw[darrow] (reward) to[out=90,in=0] (4,0) -- (strategic);
     \draw[darrow] (reward) -- (tactical);
     \draw[arrow] (next_state) to[out=90,in=180] (-4,0) -- (state);
 
-    % Time scale annotations
-    \node[label, above=0.1cm of strategic_layer] {Updates every $k$ steps};
-    \node[label, above=0.1cm of tactical_layer] {Updates every step};
+    % Timescale annotations
+    \node[label, above=0.2cm of strategic_layer] {Updates every $k$ steps};
+    \node[label, above=0.2cm of tactical_layer] {Updates every step};
 
-    % Add legend in bottom right corner
-    \node[draw=gray!50,fill=white,rounded corners=3pt,font=\sffamily\small,anchor=south east]
-    at (6,-6.5)
+    % Legend
+    \node[draw=black!40,fill=white,rounded corners=4pt,font=\sffamily\small,anchor=south east]
+    at (6.5,-6.5)
     {\begin{tabular}{ll}
-        \textcolor{gray!70}{$\longrightarrow$} & Direct flow\\
-        \textcolor{gray!70}{$\dashrightarrow$} & Reward signal
+        \textcolor{black!50}{$\longrightarrow$} & Direct flow\\[2pt]
+        \textcolor{black!50}{$\dashrightarrow$} & Reward signal
     \end{tabular}};
-
 \end{tikzpicture}
 \caption{Enhanced architecture of the hierarchical DRL framework. The system operates at two timescales: the strategic layer makes high-level decisions every $k$ steps, while the tactical layer produces actions at every timestep. The framework integrates environmental feedback through both direct state transitions and reward signals.}
 \label{fig:architecture}

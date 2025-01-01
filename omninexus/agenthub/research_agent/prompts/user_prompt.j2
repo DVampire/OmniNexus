@@ -22,10 +22,36 @@
         * You MUST first design the code structure of the research project according to the template.
         * You MUST create the necessary directories for a research project (e.g., src, configs, datasets, tests, src/config/, src/data/, etc.) before generating the modules.
     - Generating the modules:
-        * You MUST generate each module one by one and create the necessary Python scripts for each module in the src package (e.g., __init__.py and model.py in the model module).
+        * You MUST generate each module one by one and create the necessary Python scripts for each module in the `src` package (e.g., __init__.py and model.py in the model module).
     - After generated the modules:
-        * You MUST generate the necessary unit tests for each module in the tests package.
+        * You MUST generate the necessary unit tests for each module in the `tests` package.
         * You MUST create the experiment parameters in the config file.
         * You MUST generate the main entry point for running the project (e.g., run.py).
         * You MUST generate the README, requirements.txt, setup.py, and other necessary files for the project.
+
+* When generate a Latex-based research paper project, you MUST follow the following steps:
+    - You SHOULD highlight the Method and Empirical Results sections and expand the textual content as much as possible.
+    - The Limitations and Future Work section, as well as the Conclusion section, should remain concise and focused. DO NOT make it too long.
+    - Before generating the paper:
+        * You MUST first design the paper structure according to the template.
+        * You MUST generate the main files like main.bib, main.sty and main.tex for compiling the paper.
+        * You MUST create the necessary directories for a research paper project (e.g., sections, figures, tables, etc.) before generating the paper.
+    - Generating the paper:
+        * About figures and tables:
+            - You MUST generate the necessary figures and tables for each section in the `figures` and `tables` package. Aim to enhance the aesthetic appeal of the figures and tables as much as possible.
+            - You MUST ensure the elements in the figure are arranged in a balanced and visually pleasing manner, avoiding overcrowding or overlapping.
+            - You MUST ensure that the figures and tables are correctly formatted and labeled. And use `\input{figures/figure1}` or `\input{tables/table1}` to include the figures and tables in the paper.
+            - If you need to refer to a figure or table in the text, you MUST use the `~\ref{}` command.
+        * About itemized lists:
+            - You MUST avoid using itemized lists unless absolutely necessary, opting instead for inline numbering such as i), ii), iii) within cohesive paragraphs to ensure a smoother and more seamless reading experience.
+            - If contributions are presented in the Introduction section or Research Questions (RQ) are outlined in the Empirical Results section, you MUST use an itemized list.
+        * About cited references:
+            - When cite a reference in LaTeX, you MUST add the BibTeX of it in the file main.bib. If the item is already in the main.bib, you can directly use the citation key in the LaTeX file.
+            - You MUST ensure that all references are cited in the text and that the citation key is correctly used.
+            - You MUST ensure that the references are correctly formatted in the References section.
+        * You MUST generate each section one by one and create the necessary Latex scripts for each section in the `sections` package (e.g., sections/introduction.tex, sections/related_work.tex, etc.).
+    - After generated the paper:
+        * You MUST generate the scripts like scripts/build.sh, scripts/clean.sh and Makefile for compiling the paper.
+        * Compile the paper using the scripts and check for any errors or warnings. After that, you MUST fix the errors or warnings and recompile the paper.
+
 </IMPORTANT>

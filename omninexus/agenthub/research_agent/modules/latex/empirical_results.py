@@ -63,8 +63,6 @@ The Empirical Results section is a core component of your paper, demonstrating h
 * Negative or Unexpected Findings: Address them candidly. Providing well-reasoned explanations or hypotheses enhances the paper’s credibility.
 * Adhere to Formatting: Follow any page limit or style constraints required by the conference/journal. Move extensive details to appendices if needed.
 
-NOTE: When cite a reference in LaTeX, you MUST add the BibTeX of it in the file main.bib. If the item is already in the main.bib, you can directly use the citation key in the LaTeX file.
-
 ** Example Empirical Results **
 For demonstration only. Adapt it to match your specific research and results. Here is an example empirical results section:
 (this is the start of sections/empirical_results.tex)
@@ -120,7 +118,7 @@ We conduct error analysis by classifying unsuccessful episodes, revealing that m
 In summary, the hierarchical design accelerates exploration, improves late-stage stability, and achieves higher final win rates in challenging RTS environments. Although simpler tasks do not benefit as markedly from the added complexity, the synergy of macro-level strategies and micro-level control is instrumental in scaling to multi-faceted domains. Our results suggest that further enhancements in adaptive strategic planning—potentially incorporating opponent modeling—could mitigate vulnerabilities to adversarial tactics. Ultimately, this work demonstrates the viability of hierarchical DRL for real-time decision-making under partial observability, non-stationarity, and large-scale action spaces.
 (this is the end of sections/empirical_results.tex)
 
-** Example tables/baselines_compariso.tex **
+** Example tables/baselines_comparison.tex **
 (this is the start of tables/baselines_comparison.tex)
 \begin{table}[t]
     \centering
@@ -145,44 +143,45 @@ In summary, the hierarchical design accelerates exploration, improves late-stage
     \begin{tikzpicture}
     \begin{axis}[
         ybar,
-        width=7.0cm,
-        height=5.0cm,
-        bar width=0.35cm,
+        width=10cm, % Increase width for better spacing
+        height=7cm, % Increase height for better visibility
+        bar width=0.4cm, % Adjust bar width for clarity
         ymin=0,
         ymax=60,
-        enlarge x limits=0.3,
-        axis x line=bottom,
-        axis y line=left,
-        ymajorgrids=true,
+        enlarge x limits=0.5, % Add padding on the x-axis to avoid overlap
+        axis line style={line width=1pt}, % Bold axis lines for better visibility
+        tick style={line width=0.8pt}, % Bold tick lines for clarity
+        grid=major, % Enable major grid lines
         xtick=data,
-        symbolic x coords={FlatDRL, MARL, HierDRL},
-        xlabel={Method},
-        ylabel={\#Steps to 80\% Performance (k)},
-        xlabel style={font=\footnotesize},
-        ylabel style={font=\footnotesize},
-        ticklabel style={font=\footnotesize},
+        symbolic x coords={FlatDRL, MARL, HierDRL}, % Define symbolic x-axis labels
+        xlabel={Method}, % Label for the x-axis
+        ylabel={\#Steps to 80\% Performance (k)}, % Label for the y-axis
+        xlabel style={font=\small, yshift=5pt}, % Adjust position of x-axis label
+        ylabel style={font=\small, yshift=-10pt}, % Shift y-axis label outward to avoid overlap
+        ticklabel style={font=\small}, % Set font size for axis tick labels
         legend style={
-            at={(0.5,1.03)},
-            anchor=south,
-            font=\footnotesize,
-            cells={anchor=west},
-            legend columns=1
+            at={(0.5,-0.2)}, % Place legend below the chart
+            anchor=north,
+            font=\small,
+            cells={anchor=west}, % Align legend text to the left
+            legend columns=1 % Single column for legend entries
         },
         nodes near coords,
         every node near coord/.append style={
-            font=\footnotesize,
-            rotate=90,
+            font=\small,
+            rotate=90, % Rotate bar value labels for better readability
             anchor=west,
         },
+        clip=false, % Prevent clipping of axis elements or labels
     ]
-    % Use a custom or cycle list color scheme:
-    % e.g., fill=blue!50 or fill=red!50 for each bar.
+    % Data for the bar chart
     \addplot[fill=blue!50] coordinates {
         (FlatDRL,45)
         (MARL,52)
         (HierDRL,39)
     };
 
+    % Legend entry
     \legend{Exploration Efficiency}
     \end{axis}
     \end{tikzpicture}
@@ -201,11 +200,11 @@ In summary, the hierarchical design accelerates exploration, improves late-stage
     \toprule
     \textbf{Ablation Variant} & \textbf{Win Rate (\%)} & \textbf{Cumulative Reward} & \textbf{Steps to 80\% Perf.} \\
     \midrule
-    \textbf{Full HierDRL (Ours)} & \textbf{80.5 (1.6)} & \textbf{355.2 (9.1)} & \textbf{39k} \\
     No-Strategic-Layer & 72.0 (2.8) & 310.1 (11.2) & 45k \\
     No-Tactical-Layer & 70.1 (3.5) & 300.5 (12.3) & 48k \\
     No-Curriculum & 74.5 (2.6) & 320.2 (10.7) & 50k \\
     Simplified State-Sharing & 75.2 (2.1) & 325.4 (10.2) & 44k \\
+    \textbf{Full HierDRL (Ours)} & \textbf{80.5 (1.6)} & \textbf{355.2 (9.1)} & \textbf{39k} \\
     \bottomrule
     \end{tabular}
 \end{table}
