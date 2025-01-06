@@ -52,6 +52,7 @@ from omninexus.agenthub.research_agent.tools import (
     IPythonTool,
     LLMBasedFileEditTool,
     StrReplaceEditorTool,
+    WebReadTool,
 )
 from omninexus.core.logger import omninexus_logger as logger
 from omninexus.events.action import (
@@ -204,6 +205,7 @@ def get_tools(
     tools = modules_idea + modules_project + modules_latex + tools
 
     tools.append(BrowserTool)
+    tools.append(WebReadTool)
     tools.append(IPythonTool)
     tools.append(LLMBasedFileEditTool)
 

@@ -4,6 +4,7 @@ from omninexus.agenthub.research_agent.tools.file_edit import LLMBasedFileEditTo
 from omninexus.agenthub.research_agent.tools.finish import FinishTool
 from omninexus.agenthub.research_agent.tools.ipython import IPythonTool
 from omninexus.agenthub.research_agent.tools.str_replace import StrReplaceEditorTool
+from omninexus.agenthub.research_agent.tools.web import WebReadTool
 
 __all__ = [
     'CmdRunTool',
@@ -12,4 +13,5 @@ __all__ = [
     'IPythonTool',
     'BrowserTool',
     'FinishTool',
+    'WebReadTool',
 ]

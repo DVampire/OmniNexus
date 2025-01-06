@@ -79,6 +79,7 @@ You can split the main files into three key parts: bibliography, style definitio
     decorations.pathreplacing,  % For braces
     calc,                   % Coordinate calculations
     backgrounds             % Background elements
+    shadows,                % Shadows
 }
 \usepackage{float}          % Figure placement control.
 \usepackage{graphicx}       % For figure size adjustments if needed
