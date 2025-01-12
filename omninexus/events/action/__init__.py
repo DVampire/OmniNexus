@@ -20,6 +20,7 @@ from omninexus.events.action.modules import (
     LatexAction,
     ProjectAction,
     RelevantResearchRetrievalAction,
+    ReviewAction,
 )
 from omninexus.events.action.tasks import AddTaskAction, ModifyTaskAction
 
@@ -46,4 +47,5 @@ __all__ = [
     'RelevantResearchRetrievalAction',
     'IdeaGenerationAction',
     'LatexAction',
+    'ReviewAction',
 ]

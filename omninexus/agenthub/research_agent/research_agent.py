@@ -23,6 +23,7 @@ from omninexus.events.action import (
     MessageAction,
     ProjectAction,
     RelevantResearchRetrievalAction,
+    ReviewAction,
 )
 from omninexus.events.observation import (
     AgentDelegateObservation,
@@ -34,6 +35,7 @@ from omninexus.events.observation import (
     LatexObservation,
     ProjectObservation,
     RelevantResearchRetrievalOutputObservation,
+    ReviewObservation,
     UserRejectObservation,
 )
 from omninexus.events.observation.error import ErrorObservation
@@ -163,6 +165,7 @@ class ResearchAgent(Agent):
                 IdeaGenerationAction,
                 ProjectAction,
                 LatexAction,
+                ReviewAction,
             ),
         ) or (
             isinstance(action, (AgentFinishAction, CmdRunAction))
@@ -266,6 +269,12 @@ class ResearchAgent(Agent):
                 obs.content + obs.interpreter_details, max_message_chars
             )
             text += f'\n[Latex command finished with exit code {obs.exit_code}]'
+            message = Message(role='user', content=[TextContent(text=text)])
+        elif isinstance(obs, ReviewObservation):
+            text = truncate_content(
+                obs.content + obs.interpreter_details, max_message_chars
+            )
+            text += f'\n[Review command finished with exit code {obs.exit_code}]'
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, IdeaGenerationObservation):
             text = truncate_content(

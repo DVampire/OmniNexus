@@ -154,3 +154,26 @@ class LatexObservation(Observation):
 
     def __str__(self) -> str:
         return f'**LatexObservation (source={self.source}, exit code={self.exit_code})**\n{self.content}'
+
+
+@dataclass
+class ReviewObservation(Observation):
+    """This data class represents the output of a command."""
+
+    command_id: int
+    command: str
+    exit_code: int = 0
+    hidden: bool = False
+    observation: str = ObservationType.RUN
+    interpreter_details: str = ''
+
+    @property
+    def error(self) -> bool:
+        return self.exit_code != 0
+
+    @property
+    def message(self) -> str:
+        return f'Review `{self.command}` executed with exit code {self.exit_code}.'
+
+    def __str__(self) -> str:
+        return f'**ReviewObservation (source={self.source}, exit code={self.exit_code})**\n{self.content}'

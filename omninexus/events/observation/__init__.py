@@ -17,6 +17,7 @@ from omninexus.events.observation.modules import (
     LatexObservation,
     ProjectObservation,
     RelevantResearchRetrievalOutputObservation,
+    ReviewObservation,
 )
 from omninexus.events.observation.observation import Observation
 from omninexus.events.observation.reject import UserRejectObservation
@@ -40,4 +41,5 @@ __all__ = [
     'RelevantResearchRetrievalOutputObservation',
     'IdeaGenerationObservation',
     'LatexObservation',
+    'ReviewObservation',
 ]

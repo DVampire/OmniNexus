@@ -45,6 +45,7 @@ from omninexus.agenthub.research_agent.modules.project import (
     ProjectTransformTool,
     ProjectUtilsTool,
 )
+from omninexus.agenthub.research_agent.modules.review import ReviewTool
 from omninexus.agenthub.research_agent.tools import (
     BrowserTool,
     CmdRunTool,
@@ -202,7 +203,11 @@ def get_tools(
         LatexRelatedWorkTool,
     ]
 
-    tools = modules_idea + modules_project + modules_latex + tools
+    modules_review = [
+        ReviewTool,
+    ]
+
+    tools = modules_idea + modules_project + modules_latex + modules_review + tools
 
     tools.append(BrowserTool)
     tools.append(WebReadTool)
