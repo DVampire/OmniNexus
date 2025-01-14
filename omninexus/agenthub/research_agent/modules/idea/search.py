@@ -16,7 +16,7 @@ _browser_action_space = HighLevelActionSet(
     multiaction=True,  # enable to agent to take multiple actions at once
 )
 
-_IDEA_RELEVANT_RESEARCH_RETRIEVAL_DESCRIPTION = """Interact with the browser using Python code to search for LATEST research papers that are
+_IDEA_RELEVANT_RESEARCH_RETRIEVAL_DESCRIPTION = """Interact with the browser using Python code to search for LATEST (e.g., 2025, 2024 or 2023) research papers that are
 relevant to the given paper or topic.
 
 # The python code should interact with the browser using the following functions:

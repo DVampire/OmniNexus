@@ -320,7 +320,9 @@ def convert_fncall_messages_to_non_fncall_messages(
     converted_messages = []
     first_user_message_encountered = False
     for message in messages:
-        role, content = message['role'], message['content']
+        role = message.get('role', 'user')
+        content = message.get('content', None)
+
         if content is None:
             content = ''
 

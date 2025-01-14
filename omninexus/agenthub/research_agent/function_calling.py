@@ -69,6 +69,7 @@ from omninexus.events.action import (
     MessageAction,
     ProjectAction,
     RelevantResearchRetrievalAction,
+    ReviewAction
 )
 from omninexus.events.tool import ToolCallMetadata
 
@@ -137,6 +138,8 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                 action = ProjectAction(**arguments)
             elif tool_call.function.name.startswith('latex_'):
                 action = LatexAction(**arguments)
+            elif tool_call.function.name == 'review':
+                action = ReviewAction(**arguments)
             else:
                 raise RuntimeError(f'Unknown tool call: {tool_call.function.name}')
 
