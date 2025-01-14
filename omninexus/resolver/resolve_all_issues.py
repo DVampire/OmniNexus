@@ -80,14 +80,13 @@ async def resolve_issues(
         repo_instruction: Repository instruction to use.
         issue_numbers: List of issue numbers to resolve.
     """
-    issue_handler = issue_handler_factory(issue_type, owner, repo, token)
+    issue_handler = issue_handler_factory(issue_type, owner, repo, token, llm_config)
 
     # Load dataset
-    issues: list[GithubIssue] = issue_handler.get_converted_issues()
+    issues: list[GithubIssue] = issue_handler.get_converted_issues(
+        issue_numbers=issue_numbers
+    )
 
-    if issue_numbers is not None:
-        issues = [issue for issue in issues if issue.number in issue_numbers]
-        logger.info(f'Limiting resolving to issues {issue_numbers}.')
     if limit_issues is not None:
         issues = issues[:limit_issues]
         logger.info(f'Limiting resolving to first {limit_issues} issues.')
@@ -124,10 +123,10 @@ async def resolve_issues(
     logger.info(f'Base commit: {base_commit}')
 
     if repo_instruction is None:
-        # Check for .omninexus_instructions file in the workspace directory
-        omninexus_instructions_path = os.path.join(repo_dir, '.omninexus_instructions')
-        if os.path.exists(omninexus_instructions_path):
-            with open(omninexus_instructions_path, 'r') as f:
+        # Check for .openhands_instructions file in the workspace directory
+        openhands_instructions_path = os.path.join(repo_dir, '.openhands_instructions')
+        if os.path.exists(openhands_instructions_path):
+            with open(openhands_instructions_path, 'r') as f:
                 repo_instruction = f.read()
 
     # OUTPUT FILE

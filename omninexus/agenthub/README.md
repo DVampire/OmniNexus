@@ -2,22 +2,22 @@
 
 In this folder, there may exist multiple implementations of `Agent` that will be used by the framework.
 
-For example, `omninexus/agenthub/codeact_agent`, etc.
+For example, `openhands/agenthub/codeact_agent`, etc.
 Contributors from different backgrounds and interests can choose to contribute to any (or all!) of these directions.
 
 ## Constructing an Agent
 
-The abstraction for an agent can be found [here](../omninexus/controller/agent.py).
+The abstraction for an agent can be found [here](../controller/agent.py).
 
 Agents are run inside of a loop. At each iteration, `agent.step()` is called with a
-[State](../omninexus/controller/state/state.py) input, and the agent must output an [Action](../omninexus/events/action).
+[State](../controller/state/state.py) input, and the agent must output an [Action](../events/action).
 
 Every agent also has a `self.llm` which it can use to interact with the LLM configured by the user.
 See the [LiteLLM docs for `self.llm.completion`](https://docs.litellm.ai/docs/completion).
 
 ## State
 
-The `state` represents the running state of an agent in the omninexus system. The class handles saving and restoring the agent session. It is serialized in a pickle.
+The `state` represents the running state of an agent in the OpenHands system. The class handles saving and restoring the agent session. It is serialized in a pickle.
 
 The State object stores information about:
 
@@ -46,17 +46,17 @@ The agent can add and modify subtasks through the `AddTaskAction` and `ModifyTas
 
 Here is a list of available Actions, which can be returned by `agent.step()`:
 
-- [`CmdRunAction`](../omninexus/events/action/commands.py) - Runs a command inside a sandboxed terminal
-- [`IPythonRunCellAction`](../omninexus/events/action/commands.py) - Execute a block of Python code interactively (in Jupyter notebook) and receives `CmdOutputObservation`. Requires setting up `jupyter` [plugin](../omninexus/runtime/plugins) as a requirement.
-- [`FileReadAction`](../omninexus/events/action/files.py) - Reads the content of a file
-- [`FileWriteAction`](../omninexus/events/action/files.py) - Writes new content to a file
-- [`BrowseURLAction`](../omninexus/events/action/browse.py) - Gets the content of a URL
-- [`AddTaskAction`](../omninexus/events/action/tasks.py) - Adds a subtask to the plan
-- [`ModifyTaskAction`](../omninexus/events/action/tasks.py) - Changes the state of a subtask.
-- [`AgentFinishAction`](../omninexus/events/action/agent.py) - Stops the control loop, allowing the user/delegator agent to enter a new task
-- [`AgentRejectAction`](../omninexus/events/action/agent.py) - Stops the control loop, allowing the user/delegator agent to enter a new task
-- [`AgentFinishAction`](../omninexus/events/action/agent.py) - Stops the control loop, allowing the user to enter a new task
-- [`MessageAction`](../omninexus/events/action/message.py) - Represents a message from an agent or the user
+- [`CmdRunAction`](../events/action/commands.py) - Runs a command inside a sandboxed terminal
+- [`IPythonRunCellAction`](../events/action/commands.py) - Execute a block of Python code interactively (in Jupyter notebook) and receives `CmdOutputObservation`. Requires setting up `jupyter` [plugin](../runtime/plugins) as a requirement.
+- [`FileReadAction`](../events/action/files.py) - Reads the content of a file
+- [`FileWriteAction`](../events/action/files.py) - Writes new content to a file
+- [`BrowseURLAction`](../events/action/browse.py) - Gets the content of a URL
+- [`AddTaskAction`](../events/action/tasks.py) - Adds a subtask to the plan
+- [`ModifyTaskAction`](../events/action/tasks.py) - Changes the state of a subtask.
+- [`AgentFinishAction`](../events/action/agent.py) - Stops the control loop, allowing the user/delegator agent to enter a new task
+- [`AgentRejectAction`](../events/action/agent.py) - Stops the control loop, allowing the user/delegator agent to enter a new task
+- [`AgentFinishAction`](../events/action/agent.py) - Stops the control loop, allowing the user to enter a new task
+- [`MessageAction`](../events/action/message.py) - Represents a message from an agent or the user
 
 To serialize and deserialize an action, you can use:
 - `action.to_dict()` to serialize the action to a dictionary to be sent to the UI, including a user-friendly string representation of the message
@@ -70,12 +70,12 @@ But they may also appear as a result of asynchronous events (e.g. a message from
 
 Here is a list of available Observations:
 
-- [`CmdOutputObservation`](../omninexus/events/observation/commands.py)
-- [`BrowserOutputObservation`](../omninexus/events/observation/browse.py)
-- [`FileReadObservation`](../omninexus/events/observation/files.py)
-- [`FileWriteObservation`](../omninexus/events/observation/files.py)
-- [`ErrorObservation`](../omninexus/events/observation/error.py)
-- [`SuccessObservation`](../omninexus/events/observation/success.py)
+- [`CmdOutputObservation`](../events/observation/commands.py)
+- [`BrowserOutputObservation`](../events/observation/browse.py)
+- [`FileReadObservation`](../events/observation/files.py)
+- [`FileWriteObservation`](../events/observation/files.py)
+- [`ErrorObservation`](../events/observation/error.py)
+- [`SuccessObservation`](../events/observation/success.py)
 
 You can use `observation.to_dict()` and `observation_from_dict` to serialize and deserialize observations.
 
@@ -94,7 +94,7 @@ sending a prompt to the LLM, then parsing the response into an `Action`.
 
 ## Agent Delegation
 
-omninexus is a multi-agentic system. Agents can delegate tasks to other agents, whether
+OpenHands is a multi-agentic system. Agents can delegate tasks to other agents, whether
 prompted by the user, or when the agent decides to ask another agent for help. For example,
 the `CodeActAgent` might delegate to the `BrowsingAgent` to answer questions that involve browsing
 the web. The Delegator Agent forwards tasks to micro-agents, such as 'RepoStudyAgent' to study a repo,
@@ -102,7 +102,7 @@ or 'VerifierAgent' to verify a task completion.
 
 ### Understanding the terminology
 
-A `task` is an end-to-end conversation between omninexus (the whole system) and the user,
+A `task` is an end-to-end conversation between OpenHands (the whole system) and the user,
 which might involve one or more inputs from the user. It starts with an initial input
 (typically a task statement) from the user, and ends with either an `AgentFinishAction`
 initiated by the agent, a stop initiated by the user, or an error.
@@ -113,7 +113,7 @@ itself. Otherwise, a `task` consists of multiple `subtasks`, each executed by
 one agent.
 
 For example, considering a task from the user: `tell me how many GitHub stars
-omninexus repo has`. Let's assume the default agent is CodeActAgent.
+OpenHands repo has`. Let's assume the default agent is CodeActAgent.
 
 ```
 -- TASK STARTS (SUBTASK 0 STARTS) --

@@ -1,13 +1,5 @@
-"""This file contains the function calling implementation for different actions.
-
-This is similar to the functionality of `CodeActResponseParser`.
-"""
-
 from browsergym.core.action.highlevel import HighLevelActionSet
-from litellm import (
-    ChatCompletionToolParam,
-    ChatCompletionToolParamFunctionChunk,
-)
+from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
 # from browsergym/core/action/highlevel.py
 _browser_action_space = HighLevelActionSet(
@@ -16,7 +8,8 @@ _browser_action_space = HighLevelActionSet(
     multiaction=True,  # enable to agent to take multiple actions at once
 )
 
-_BROWSER_DESCRIPTION = """Interact with the browser using Python code.
+
+_BROWSER_DESCRIPTION = """Interact with the browser using Python code. Use it ONLY when you need to interact with a webpage.
 
 See the description of "code" parameter for more details.
 

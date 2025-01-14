@@ -5,32 +5,34 @@
  * For more information, see https://remix.run/file-conventions/entry.client
  */
 
-import { RemixBrowser } from "@remix-run/react";
+import { HydratedRouter } from "react-router/dom";
 import React, { startTransition, StrictMode } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import posthog from "posthog-js";
 import "./i18n";
+import {
+  QueryCache,
+  QueryClient,
+  QueryClientProvider,
+} from "@tanstack/react-query";
+import toast from "react-hot-toast";
 import store from "./store";
-import OpenHands from "./api/open-hands";
+import { useConfig } from "./hooks/query/use-config";
+import { AuthProvider } from "./context/auth-context";
+import { SettingsProvider } from "./context/settings-context";
 
 function PosthogInit() {
-  const [key, setKey] = React.useState<string | null>(null);
+  const { data: config } = useConfig();
 
   React.useEffect(() => {
-    OpenHands.getConfig().then((config) => {
-      setKey(config.POSTHOG_CLIENT_KEY);
-    });
-  }, []);
-
-  React.useEffect(() => {
-    if (key) {
-      posthog.init(key, {
+    if (config?.POSTHOG_CLIENT_KEY) {
+      posthog.init(config.POSTHOG_CLIENT_KEY, {
         api_host: "https://us.i.posthog.com",
         person_profiles: "identified_only",
       });
     }
-  }, [key]);
+  }, [config]);
 
   return null;
 }
@@ -48,14 +50,42 @@ async function prepareApp() {
   }
 }
 
+const QUERY_KEYS_TO_IGNORE = ["authenticated", "hosts"];
+const queryClient = new QueryClient({
+  queryCache: new QueryCache({
+    onError: (error, query) => {
+      if (!QUERY_KEYS_TO_IGNORE.some((key) => query.queryKey.includes(key))) {
+        toast.error(error.message);
+      }
+    },
+  }),
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60 * 15, // 15 minutes
+    },
+    mutations: {
+      onError: (error) => {
+        toast.error(error.message);
+      },
+    },
+  },
+});
+
 prepareApp().then(() =>
   startTransition(() => {
     hydrateRoot(
       document,
       <StrictMode>
         <Provider store={store}>
-          <RemixBrowser />
-          <PosthogInit />
+          <AuthProvider>
+            <QueryClientProvider client={queryClient}>
+              <SettingsProvider>
+                <HydratedRouter />
+                <PosthogInit />
+              </SettingsProvider>
+            </QueryClientProvider>
+          </AuthProvider>
         </Provider>
       </StrictMode>,
     );

@@ -224,7 +224,7 @@ IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX = """
 --------------------- END OF NEW TASK DESCRIPTION ---------------------
 
 PLEASE follow the format strictly! PLEASE EMIT ONE AND ONLY ONE FUNCTION CALL PER MESSAGE.
-""".lstrip()
+"""
 
 # Regex patterns for function call parsing
 FN_REGEX_PATTERN = r'<function=([^>]+)>\n(.*?)</function>'
@@ -320,11 +320,8 @@ def convert_fncall_messages_to_non_fncall_messages(
     converted_messages = []
     first_user_message_encountered = False
     for message in messages:
-        role = message.get('role', 'user')
-        content = message.get('content', None)
-
-        if content is None:
-            content = ''
+        role = message['role']
+        content = message['content']
 
         # 1. SYSTEM MESSAGES
         # append system prompt suffix to content
@@ -341,6 +338,7 @@ def convert_fncall_messages_to_non_fncall_messages(
                     f'Unexpected content type {type(content)}. Expected str or list. Content: {content}'
                 )
             converted_messages.append({'role': 'system', 'content': content})
+
         # 2. USER MESSAGES (no change)
         elif role == 'user':
             # Add in-context learning example for the first user message
@@ -433,7 +431,7 @@ def convert_fncall_messages_to_non_fncall_messages(
                     tool_content = convert_tool_call_to_string(message['tool_calls'][0])
                 except FunctionCallConversionError as e:
                     raise FunctionCallConversionError(
-                        f'Failed to convert tool call to string. Raw messages: {json.dumps(messages, indent=2)}'
+                        f'Failed to convert tool call to string.\nCurrent tool call: {message["tool_calls"][0]}.\nRaw messages: {json.dumps(messages, indent=2)}'
                     ) from e
                 if isinstance(content, str):
                     content += '\n\n' + tool_content
@@ -449,10 +447,12 @@ def convert_fncall_messages_to_non_fncall_messages(
                         f'Unexpected content type {type(content)}. Expected str or list. Content: {content}'
                     )
             converted_messages.append({'role': 'assistant', 'content': content})
+
         # 4. TOOL MESSAGES (tool outputs)
         elif role == 'tool':
-            # Convert tool result as assistant message
-            prefix = f'EXECUTION RESULT of [{message["name"]}]:\n'
+            # Convert tool result as user message
+            tool_name = message.get('name', 'function')
+            prefix = f'EXECUTION RESULT of [{tool_name}]:\n'
             # and omit "tool_call_id" AND "name"
             if isinstance(content, str):
                 content = prefix + content

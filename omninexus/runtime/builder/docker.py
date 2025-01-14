@@ -6,9 +6,11 @@ import time
 import docker
 
 from omninexus import __version__ as oh_version
+from omninexus.core.exceptions import AgentRuntimeBuildError
 from omninexus.core.logger import RollingLogger
 from omninexus.core.logger import omninexus_logger as logger
 from omninexus.runtime.builder.base import RuntimeBuilder
+from omninexus.utils.term_color import TermColor, colorize
 
 
 class DockerRuntimeBuilder(RuntimeBuilder):
@@ -18,17 +20,30 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         version_info = self.docker_client.version()
         server_version = version_info.get('Version', '').replace('-', '.')
         if tuple(map(int, server_version.split('.')[:2])) < (18, 9):
-            raise RuntimeError('Docker server version must be >= 18.09 to use BuildKit')
+            raise AgentRuntimeBuildError(
+                'Docker server version must be >= 18.09 to use BuildKit'
+            )
 
         self.rolling_logger = RollingLogger(max_lines=10)
+
+    @staticmethod
+    def check_buildx():
+        """Check if Docker Buildx is available"""
+        try:
+            result = subprocess.run(
+                ['docker', 'buildx', 'version'], capture_output=True, text=True
+            )
+            return result.returncode == 0
+        except FileNotFoundError:
+            return False
 
     def build(
         self,
         path: str,
         tags: list[str],
         platform: str | None = None,
-        use_local_cache: bool = False,
         extra_build_args: list[str] | None = None,
+        use_local_cache: bool = False,
     ) -> str:
         """Builds a Docker image using BuildKit and handles the build logs appropriately.
 
@@ -43,7 +58,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             str: The name of the built Docker image.
 
         Raises:
-            RuntimeError: If the Docker server version is incompatible or if the build process fails.
+            AgentRuntimeBuildError: If the Docker server version is incompatible or if the build process fails.
 
         Note:
             This method uses Docker BuildKit for improved build performance and caching capabilities.
@@ -54,7 +69,41 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         version_info = self.docker_client.version()
         server_version = version_info.get('Version', '').replace('-', '.')
         if tuple(map(int, server_version.split('.'))) < (18, 9):
-            raise RuntimeError('Docker server version must be >= 18.09 to use BuildKit')
+            raise AgentRuntimeBuildError(
+                'Docker server version must be >= 18.09 to use BuildKit'
+            )
+
+        if not DockerRuntimeBuilder.check_buildx():
+            # when running omninexus in a container, there might not be a "docker"
+            # binary available, in which case we need to download docker binary.
+            # since the official omninexus app image is built from debian, we use
+            # debian way to install docker binary
+            logger.info(
+                'No docker binary available inside omninexus-app container, trying to download online...'
+            )
+            commands = [
+                'apt-get update',
+                'apt-get install -y ca-certificates curl gnupg',
+                'install -m 0755 -d /etc/apt/keyrings',
+                'curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc',
+                'chmod a+r /etc/apt/keyrings/docker.asc',
+                'echo \
+                  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
+                  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+                  tee /etc/apt/sources.list.d/docker.list > /dev/null',
+                'apt-get update',
+                'apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin',
+            ]
+            for cmd in commands:
+                try:
+                    subprocess.run(
+                        cmd, shell=True, check=True, stdout=subprocess.DEVNULL
+                    )
+                except subprocess.CalledProcessError as e:
+                    logger.error(f'Image build failed:\n{e}')
+                    logger.error(f'Command output:\n{e.output}')
+                    raise
+            logger.info('Downloaded and installed docker binary')
 
         target_image_hash_name = tags[0]
         target_image_repo, target_image_source_tag = target_image_hash_name.split(':')
@@ -65,8 +114,8 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             'buildx',
             'build',
             '--progress=plain',
-            f'--build-arg=omninexus_RUNTIME_VERSION={oh_version}',
-            f'--build-arg=omninexus_RUNTIME_BUILD_TIME={datetime.datetime.now().isoformat()}',
+            f'--build-arg=OMNINEXUS_RUNTIME_VERSION={oh_version}',
+            f'--build-arg=OMNINEXUS_RUNTIME_BUILD_TIME={datetime.datetime.now().isoformat()}',
             f'--tag={target_image_hash_name}',
             '--load',
         ]
@@ -153,7 +202,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         # Check if the image is built successfully
         image = self.docker_client.images.get(target_image_hash_name)
         if image is None:
-            raise RuntimeError(
+            raise AgentRuntimeBuildError(
                 f'Build failed: Image {target_image_hash_name} not found'
             )
 
@@ -187,7 +236,9 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             return True
         except docker.errors.ImageNotFound:
             if not pull_from_repo:
-                logger.debug(f'Image {image_name} not found locally')
+                logger.debug(
+                    f'Image {image_name} {colorize("not found", TermColor.WARNING)} locally'
+                )
                 return False
             try:
                 logger.debug(
@@ -214,7 +265,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                 logger.debug('Could not find image locally or in registry.')
                 return False
             except Exception as e:
-                msg = 'Image could not be pulled: '
+                msg = f'Image {colorize("could not be pulled", TermColor.ERROR)}: '
                 ex_msg = str(e)
                 if 'Not Found' in ex_msg:
                     msg += 'image not found in registry.'

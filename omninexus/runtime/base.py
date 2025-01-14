@@ -1,7 +1,10 @@
+import asyncio
 import atexit
 import copy
 import json
 import os
+import random
+import string
 from abc import abstractmethod
 from pathlib import Path
 from typing import Callable
@@ -9,6 +12,7 @@ from typing import Callable
 from requests.exceptions import ConnectionError
 
 from omninexus.core.config import AppConfig, SandboxConfig
+from omninexus.core.exceptions import AgentRuntimeDisconnectedError
 from omninexus.core.logger import omninexus_logger as logger
 from omninexus.events import EventSource, EventStream, EventStreamSubscriber
 from omninexus.events.action import (
@@ -25,11 +29,18 @@ from omninexus.events.event import Event
 from omninexus.events.observation import (
     CmdOutputObservation,
     ErrorObservation,
+    FileReadObservation,
     NullObservation,
     Observation,
     UserRejectObservation,
 )
 from omninexus.events.serialization.action import ACTION_TYPE_TO_CLASS
+from omninexus.microagent import (
+    BaseMicroAgent,
+    KnowledgeMicroAgent,
+    RepoMicroAgent,
+    TaskMicroAgent,
+)
 from omninexus.runtime.plugins import (
     JupyterRequirement,
     PluginRequirement,
@@ -45,14 +56,6 @@ STATUS_MESSAGES = {
     'STATUS$CONTAINER_STARTED': 'Container started.',
     'STATUS$WAITING_FOR_CLIENT': 'Waiting for client...',
 }
-
-
-class RuntimeNotReadyError(Exception):
-    pass
-
-
-class RuntimeDisconnectedError(Exception):
-    pass
 
 
 def _default_env_vars(sandbox_config: SandboxConfig) -> dict[str, str]:
@@ -172,34 +175,126 @@ class Runtime(FileEditRuntimeMixin):
                 f'Failed to add env vars [{env_vars}] to environment: {obs.content}'
             )
 
-    async def on_event(self, event: Event) -> None:
+    def on_event(self, event: Event) -> None:
         if isinstance(event, Action):
-            # set timeout to default if not set
-            if event.timeout is None:
-                event.timeout = self.config.sandbox.timeout
-            assert event.timeout is not None
-            try:
-                observation: Observation = await call_sync_from_async(
-                    self.run_action, event
+            asyncio.get_event_loop().run_until_complete(self._handle_action(event))
+
+    async def _handle_action(self, event: Action) -> None:
+        if event.timeout is None:
+            event.timeout = self.config.sandbox.timeout
+        assert event.timeout is not None
+        try:
+            observation: Observation = await call_sync_from_async(
+                self.run_action, event
+            )
+        except Exception as e:
+            err_id = ''
+            if isinstance(e, ConnectionError) or isinstance(
+                e, AgentRuntimeDisconnectedError
+            ):
+                err_id = 'STATUS$ERROR_RUNTIME_DISCONNECTED'
+            logger.error(
+                'Unexpected error while running action',
+                exc_info=True,
+                stack_info=True,
+            )
+            self.log('error', f'Problematic action: {str(event)}')
+            self.send_error_message(err_id, str(e))
+            self.close()
+            return
+
+        observation._cause = event.id  # type: ignore[attr-defined]
+        observation.tool_call_metadata = event.tool_call_metadata
+
+        # this might be unnecessary, since source should be set by the event stream when we're here
+        source = event.source if event.source else EventSource.AGENT
+        self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
+
+    def clone_repo(self, github_token: str, selected_repository: str):
+        if not github_token or not selected_repository:
+            raise ValueError(
+                'github_token and selected_repository must be provided to clone a repository'
+            )
+        url = f'https://{github_token}@github.com/{selected_repository}.git'
+        dir_name = selected_repository.split('/')[1]
+        # add random branch name to avoid conflicts
+        random_str = ''.join(
+            random.choices(string.ascii_lowercase + string.digits, k=8)
+        )
+        branch_name = f'omninexus-workspace-{random_str}'
+        action = CmdRunAction(
+            command=f'git clone {url} {dir_name} ; cd {dir_name} ; git checkout -b {branch_name}',
+        )
+        self.log('info', f'Cloning repo: {selected_repository}')
+        self.run_action(action)
+
+    def get_microagents_from_selected_repo(
+        self, selected_repository: str | None
+    ) -> list[BaseMicroAgent]:
+        loaded_microagents: list[BaseMicroAgent] = []
+        dir_name = Path('.omninexus') / 'microagents'
+        if selected_repository:
+            dir_name = Path('/workspace') / selected_repository.split('/')[1] / dir_name
+
+        # Legacy Repo Instructions
+        # Check for legacy .omninexus_instructions file
+        obs = self.read(FileReadAction(path='.omninexus_instructions'))
+        if isinstance(obs, ErrorObservation):
+            self.log(
+                'debug',
+                f'omninexus_instructions not present, trying to load from {dir_name}',
+            )
+            obs = self.read(
+                FileReadAction(path=str(dir_name / '.omninexus_instructions'))
+            )
+
+        if isinstance(obs, FileReadObservation):
+            self.log('info', 'omninexus_instructions microagent loaded.')
+            loaded_microagents.append(
+                BaseMicroAgent.load(
+                    path='.omninexus_instructions', file_content=obs.content
                 )
-            except Exception as e:
-                err_id = ''
-                if isinstance(e, ConnectionError) or isinstance(
-                    e, RuntimeDisconnectedError
-                ):
-                    err_id = 'STATUS$ERROR_RUNTIME_DISCONNECTED'
-                self.log('error', f'Unexpected error while running action {e}')
-                self.log('error', f'Problematic action: {str(event)}')
-                self.send_error_message(err_id, str(e))
-                self.close()
-                return
+            )
 
-            observation._cause = event.id  # type: ignore[attr-defined]
-            observation.tool_call_metadata = event.tool_call_metadata
+        # Check for local repository microagents
+        files = self.list_files(str(dir_name))
+        self.log('info', f'Found {len(files)} local microagents.')
+        if 'repo.md' in files:
+            obs = self.read(FileReadAction(path=str(dir_name / 'repo.md')))
+            if isinstance(obs, FileReadObservation):
+                self.log('info', 'repo.md microagent loaded.')
+                loaded_microagents.append(
+                    RepoMicroAgent.load(
+                        path=str(dir_name / 'repo.md'), file_content=obs.content
+                    )
+                )
 
-            # this might be unnecessary, since source should be set by the event stream when we're here
-            source = event.source if event.source else EventSource.AGENT
-            self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
+        if 'knowledge' in files:
+            knowledge_dir = dir_name / 'knowledge'
+            _knowledge_microagents_files = self.list_files(str(knowledge_dir))
+            for fname in _knowledge_microagents_files:
+                obs = self.read(FileReadAction(path=str(knowledge_dir / fname)))
+                if isinstance(obs, FileReadObservation):
+                    self.log('info', f'knowledge/{fname} microagent loaded.')
+                    loaded_microagents.append(
+                        KnowledgeMicroAgent.load(
+                            path=str(knowledge_dir / fname), file_content=obs.content
+                        )
+                    )
+
+        if 'tasks' in files:
+            tasks_dir = dir_name / 'tasks'
+            _tasks_microagents_files = self.list_files(str(tasks_dir))
+            for fname in _tasks_microagents_files:
+                obs = self.read(FileReadAction(path=str(tasks_dir / fname)))
+                if isinstance(obs, FileReadObservation):
+                    self.log('info', f'tasks/{fname} microagent loaded.')
+                    loaded_microagents.append(
+                        TaskMicroAgent.load(
+                            path=str(tasks_dir / fname), file_content=obs.content
+                        )
+                    )
+        return loaded_microagents
 
     def run_action(self, action: Action) -> Observation:
         """Run an action and return the resulting observation.
@@ -305,3 +400,7 @@ class Runtime(FileEditRuntimeMixin):
     @property
     def vscode_url(self) -> str | None:
         raise NotImplementedError('This method is not implemented in the base class.')
+
+    @property
+    def web_hosts(self) -> dict[str, int]:
+        return {}

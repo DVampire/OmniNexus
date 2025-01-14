@@ -2,9 +2,11 @@ import argparse
 import os
 import pathlib
 import platform
+import sys
 from dataclasses import is_dataclass
 from types import UnionType
 from typing import Any, MutableMapping, get_args, get_origin
+from uuid import uuid4
 
 import toml
 from dotenv import load_dotenv
@@ -18,7 +20,11 @@ from omninexus.core.config.config_utils import (
 )
 from omninexus.core.config.llm_config import LLMConfig
 from omninexus.core.config.sandbox_config import SandboxConfig
+from omninexus.core.config.security_config import SecurityConfig
+from omninexus.storage import get_file_store
+from omninexus.storage.files import FileStore
 
+JWT_SECRET = '.jwt_secret'
 load_dotenv()
 
 
@@ -89,6 +95,10 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
     Args:
         cfg: The AppConfig object to update attributes of.
         toml_file: The path to the toml file. Defaults to 'config.toml'.
+
+    See Also:
+    - `config.template.toml` for the full list of config options.
+    - `SandboxConfig` for the sandbox-specific config options.
     """
     # try to read the config.toml file into the config object
     try:
@@ -144,17 +154,23 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                             )
                             llm_config = LLMConfig.from_dict(nested_value)
                             cfg.set_llm_config(llm_config, nested_key)
+                elif key is not None and key.lower() == 'security':
+                    logger.omninexus_logger.debug(
+                        'Attempt to load security config from config toml'
+                    )
+                    security_config = SecurityConfig.from_dict(value)
+                    cfg.security = security_config
                 elif not key.startswith('sandbox') and key.lower() != 'core':
                     logger.omninexus_logger.warning(
                         f'Unknown key in {toml_file}: "{key}"'
                     )
             except (TypeError, KeyError) as e:
                 logger.omninexus_logger.warning(
-                    f'Cannot parse config from toml, toml values have not been applied.\n Error: {e}',
+                    f'Cannot parse [{key}] config from toml, values have not been applied.\nError: {e}',
                     exc_info=False,
                 )
         else:
-            logger.omninexus_logger.warning(f'Unknown key in {toml_file}: "{key}')
+            logger.omninexus_logger.warning(f'Unknown section [{key}] in {toml_file}')
 
     try:
         # set sandbox config from the toml file
@@ -168,7 +184,9 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                 # read the key in sandbox and remove it from core
                 setattr(sandbox_config, new_key, core_config.pop(key))
             else:
-                logger.omninexus_logger.warning(f'Unknown sandbox config: {key}')
+                logger.omninexus_logger.warning(
+                    f'Unknown config key "{key}" in [sandbox] section'
+                )
 
         # the new style values override the old style values
         if 'sandbox' in toml_config:
@@ -180,12 +198,24 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
             if hasattr(cfg, key):
                 setattr(cfg, key, value)
             else:
-                logger.omninexus_logger.warning(f'Unknown core config key: {key}')
+                logger.omninexus_logger.warning(
+                    f'Unknown config key "{key}" in [core] section'
+                )
     except (TypeError, KeyError) as e:
         logger.omninexus_logger.warning(
-            f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
+            f'Cannot parse [sandbox] config from toml, values have not been applied.\nError: {e}',
             exc_info=False,
         )
+
+
+def get_or_create_jwt_secret(file_store: FileStore) -> str:
+    try:
+        jwt_secret = file_store.read(JWT_SECRET)
+        return jwt_secret
+    except FileNotFoundError:
+        new_secret = uuid4().hex
+        file_store.write(JWT_SECRET, new_secret)
+        return new_secret
 
 
 def finalize_config(cfg: AppConfig):
@@ -216,6 +246,11 @@ def finalize_config(cfg: AppConfig):
     if cfg.cache_dir:
         pathlib.Path(cfg.cache_dir).mkdir(parents=True, exist_ok=True)
 
+    if not cfg.jwt_secret:
+        cfg.jwt_secret = get_or_create_jwt_secret(
+            get_file_store(cfg.file_store, cfg.file_store_path)
+        )
+
 
 # Utility function for command line --group argument
 def get_llm_config_arg(
@@ -241,6 +276,7 @@ def get_llm_config_arg(
 
     Args:
         llm_config_arg: The group of llm settings to get from the config.toml file.
+        toml_file: Path to the configuration file to read from. Defaults to 'config.toml'.
 
     Returns:
         LLMConfig: The LLMConfig object with the settings from the config file.
@@ -276,8 +312,14 @@ def get_llm_config_arg(
 
 # Command line arguments
 def get_parser() -> argparse.ArgumentParser:
-    """Get the parser for the command line arguments."""
-    parser = argparse.ArgumentParser(description='Run an agent with a specific task')
+    """Get the argument parser."""
+    parser = argparse.ArgumentParser(description='Run the agent via CLI')
+
+    # Add version argument
+    parser.add_argument(
+        '-v', '--version', action='store_true', help='Show version information'
+    )
+
     parser.add_argument(
         '--config-file',
         type=str,
@@ -358,7 +400,7 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         '-n',
         '--name',
-        default='default',
+        default='',
         type=str,
         help='Name for the session',
     )
@@ -368,14 +410,26 @@ def get_parser() -> argparse.ArgumentParser:
         type=str,
         help='The comma-separated list (in quotes) of IDs of the instances to evaluate',
     )
+    parser.add_argument(
+        '--no-auto-continue',
+        action='store_true',
+        help='Disable automatic "continue" responses in headless mode. Will read from stdin instead.',
+    )
     return parser
 
 
 def parse_arguments() -> argparse.Namespace:
-    """Parse the command line arguments."""
+    """Parse command line arguments."""
     parser = get_parser()
-    parsed_args, _ = parser.parse_known_args()
-    return parsed_args
+    args = parser.parse_args()
+
+    if args.version:
+        from omninexus import __version__
+
+        print(f'Omninexus version: {__version__}')
+        sys.exit(0)
+
+    return args
 
 
 def load_app_config(
@@ -384,7 +438,7 @@ def load_app_config(
     """Load the configuration from the specified config file and environment variables.
 
     Args:
-        set_logger_levels: Whether to set the global variables for logging levels.
+        set_logging_levels: Whether to set the global variables for logging levels.
         config_file: Path to the config file. Defaults to 'config.toml' in the current directory.
     """
     config = AppConfig()
@@ -394,4 +448,32 @@ def load_app_config(
     if set_logging_levels:
         logger.DEBUG = config.debug
         logger.DISABLE_COLOR_PRINTING = config.disable_color
+    return config
+
+
+def setup_config_from_args(args: argparse.Namespace) -> AppConfig:
+    """Load config from toml and override with command line arguments.
+
+    Common setup used by both CLI and main.py entry points.
+    """
+    # Load base config from toml and env vars
+    config = load_app_config(config_file=args.config_file)
+
+    # Override with command line arguments if provided
+    if args.llm_config:
+        llm_config = get_llm_config_arg(args.llm_config)
+        if llm_config is None:
+            raise ValueError(f'Invalid toml file, cannot read {args.llm_config}')
+        config.set_llm_config(llm_config)
+
+    # Override default agent if provided
+    if args.agent_cls:
+        config.default_agent = args.agent_cls
+
+    # Set max iterations and max budget per task if provided, otherwise fall back to config values
+    if args.max_iterations is not None:
+        config.max_iterations = args.max_iterations
+    if args.max_budget_per_task is not None:
+        config.max_budget_per_task = args.max_budget_per_task
+
     return config

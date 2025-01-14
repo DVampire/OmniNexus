@@ -20,8 +20,8 @@ try:
     import omninexus
 except NameError:
     pass
-
 from omninexus import __version__ as oh_version
+from omninexus.core.exceptions import AgentRuntimeBuildError
 from omninexus.core.logger import omninexus_logger as logger
 from omninexus.runtime.builder import DockerRuntimeBuilder, RuntimeBuilder
 
@@ -76,8 +76,9 @@ def get_runtime_image_repo_and_tag(base_image: str) -> tuple[str, str]:
     Returns:
     - tuple[str, str]: The Docker repo and tag of the Docker image
     """
+
     if get_runtime_image_repo() in base_image:
-        logger.info(
+        logger.debug(
             f'The provided image [{base_image}] is already a valid runtime image.\n'
             f'Will try to reuse it as is.'
         )
@@ -118,6 +119,7 @@ def build_runtime_image(
     build_folder: str | None = None,
     dry_run: bool = False,
     force_rebuild: bool = False,
+    extra_build_args: List[str] | None = None,
 ) -> str:
     """Prepares the final docker build folder.
     If dry_run is False, it will also build the omninexus runtime Docker image using the docker build folder.
@@ -130,6 +132,7 @@ def build_runtime_image(
     - build_folder (str): The directory to use for the build. If not provided a temporary directory will be used
     - dry_run (bool): if True, it will only ready the build folder. It will not actually build the Docker image
     - force_rebuild (bool): if True, it will create the Dockerfile which uses the base_image
+    - extra_build_args (List[str]): Additional build arguments to pass to the builder
 
     Returns:
     - str: <image_repo>:<MD5 hash>. Where MD5 hash is the hash of the docker build folder
@@ -146,6 +149,7 @@ def build_runtime_image(
                 dry_run=dry_run,
                 force_rebuild=force_rebuild,
                 platform=platform,
+                extra_build_args=extra_build_args,
             )
             return result
 
@@ -157,6 +161,7 @@ def build_runtime_image(
         dry_run=dry_run,
         force_rebuild=force_rebuild,
         platform=platform,
+        extra_build_args=extra_build_args,
     )
     return result
 
@@ -169,6 +174,7 @@ def build_runtime_image_in_folder(
     dry_run: bool,
     force_rebuild: bool,
     platform: str | None = None,
+    extra_build_args: List[str] | None = None,
 ) -> str:
     runtime_image_repo, _ = get_runtime_image_repo_and_tag(base_image)
     lock_tag = f'oh_v{oh_version}_{get_hash_for_lock_files(base_image)}'
@@ -182,7 +188,9 @@ def build_runtime_image_in_folder(
 
     logger.info(f'Building image: {hash_image_name}')
     if force_rebuild:
-        logger.info(f'Force rebuild: [{runtime_image_repo}:{source_tag}] from scratch.')
+        logger.debug(
+            f'Force rebuild: [{runtime_image_repo}:{source_tag}] from scratch.'
+        )
         prep_build_folder(
             build_folder,
             base_image,
@@ -198,6 +206,7 @@ def build_runtime_image_in_folder(
                 lock_tag,
                 versioned_tag,
                 platform,
+                extra_build_args=extra_build_args,
             )
         return hash_image_name
 
@@ -206,14 +215,14 @@ def build_runtime_image_in_folder(
 
     # If the exact image already exists, we do not need to build it
     if runtime_builder.image_exists(hash_image_name, False):
-        logger.info(f'Reusing Image [{hash_image_name}]')
+        logger.debug(f'Reusing Image [{hash_image_name}]')
         return hash_image_name
 
     # We look for an existing image that shares the same lock_tag. If such an image exists, we
     # can use it as the base image for the build and just copy source files. This makes the build
     # much faster.
     if runtime_builder.image_exists(lock_image_name):
-        logger.info(f'Build [{hash_image_name}] from lock image [{lock_image_name}]')
+        logger.debug(f'Build [{hash_image_name}] from lock image [{lock_image_name}]')
         build_from = BuildFromImageType.LOCK
         base_image = lock_image_name
     elif runtime_builder.image_exists(versioned_image_name):
@@ -223,7 +232,7 @@ def build_runtime_image_in_folder(
         build_from = BuildFromImageType.VERSIONED
         base_image = versioned_image_name
     else:
-        logger.info(f'Build [{hash_image_name}] from scratch')
+        logger.debug(f'Build [{hash_image_name}] from scratch')
 
     prep_build_folder(build_folder, base_image, build_from, extra_deps)
     if not dry_run:
@@ -239,6 +248,7 @@ def build_runtime_image_in_folder(
             if build_from == BuildFromImageType.SCRATCH
             else None,
             platform=platform,
+            extra_build_args=extra_build_args,
         )
 
     return hash_image_name
@@ -254,7 +264,7 @@ def prep_build_folder(
     # If package is not found, build from source code
     omninexus_source_dir = Path(omninexus.__file__).parent
     project_root = omninexus_source_dir.parent
-    logger.info(f'Building source distribution using project root: {project_root}')
+    logger.debug(f'Building source distribution using project root: {project_root}')
 
     # Copy the 'omninexus' directory (Source code)
     shutil.copytree(
@@ -344,6 +354,7 @@ def _build_sandbox_image(
     lock_tag: str,
     versioned_tag: str | None,
     platform: str | None = None,
+    extra_build_args: List[str] | None = None,
 ):
     """Build and tag the sandbox image. The image will be tagged with all tags that do not yet exist"""
     names = [
@@ -355,10 +366,13 @@ def _build_sandbox_image(
     names = [name for name in names if not runtime_builder.image_exists(name, False)]
 
     image_name = runtime_builder.build(
-        path=str(build_folder), tags=names, platform=platform
+        path=str(build_folder),
+        tags=names,
+        platform=platform,
+        extra_build_args=extra_build_args,
     )
     if not image_name:
-        raise RuntimeError(f'Build failed for image {names}')
+        raise AgentRuntimeBuildError(f'Build failed for image {names}')
 
     return image_name
 
@@ -369,7 +383,7 @@ if __name__ == '__main__':
         '--base_image', type=str, default='nikolaik/python-nodejs:python3.12-nodejs22'
     )
     parser.add_argument('--build_folder', type=str, default=None)
-    parser.add_argument('--force_rebuild', action='store_true', default=True)
+    parser.add_argument('--force_rebuild', action='store_true', default=False)
     parser.add_argument('--platform', type=str, default=None)
     args = parser.parse_args()
 
@@ -381,14 +395,14 @@ if __name__ == '__main__':
         assert os.path.exists(
             build_folder
         ), f'Build folder {build_folder} does not exist'
-        logger.info(
+        logger.debug(
             f'Copying the source code and generating the Dockerfile in the build folder: {build_folder}'
         )
 
         runtime_image_repo, runtime_image_tag = get_runtime_image_repo_and_tag(
             args.base_image
         )
-        logger.info(
+        logger.debug(
             f'Runtime image repo: {runtime_image_repo} and runtime image tag: {runtime_image_tag}'
         )
 
@@ -410,7 +424,7 @@ if __name__ == '__main__':
 
             # Move contents of temp_dir to build_folder
             shutil.copytree(temp_dir, build_folder, dirs_exist_ok=True)
-        logger.info(
+        logger.debug(
             f'Build folder [{build_folder}] is ready: {os.listdir(build_folder)}'
         )
 
@@ -425,21 +439,18 @@ if __name__ == '__main__':
                 )
             )
 
-        logger.info(
+        logger.debug(
             f'`config.sh` is updated with the image repo[{runtime_image_repo}] and tags [{runtime_image_tag}, {runtime_image_source_tag}]'
         )
-        logger.info(
+        logger.debug(
             f'Dockerfile, source code and config.sh are ready in {build_folder}'
         )
     else:
         # If a build_folder is not provided, after copying the required source code and dynamically creating the
         # Dockerfile, we actually build the Docker image
-        logger.info('Building image in a temporary folder')
+        logger.debug('Building image in a temporary folder')
         docker_builder = DockerRuntimeBuilder(docker.from_env())
         image_name = build_runtime_image(
-            args.base_image,
-            docker_builder,
-            platform=args.platform,
-            force_rebuild=args.force_rebuild,
+            args.base_image, docker_builder, platform=args.platform
         )
-        logger.info(f'\nBuilt image: {image_name}\n')
+        logger.debug(f'\nBuilt image: {image_name}\n')

@@ -1,33 +1,9 @@
 import React from "react";
-import { useSelector } from "react-redux";
-import { json, useRouteError } from "@remix-run/react";
-import toast from "react-hot-toast";
-import { editor } from "monaco-editor";
-import { EditorProps } from "@monaco-editor/react";
-import { RootState } from "#/store";
-import AgentState from "#/types/AgentState";
-import FileExplorer from "#/components/file-explorer/FileExplorer";
-import OpenHands from "#/api/open-hands";
-import CodeEditorComponent from "./code-editor-component";
+import { useRouteError } from "react-router";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { FileExplorer } from "#/components/features/file-explorer/file-explorer";
 import { useFiles } from "#/context/files";
-import { EditorActions } from "#/components/editor-actions";
-
-const ASSET_FILE_TYPES = [
-  ".png",
-  ".jpg",
-  ".jpeg",
-  ".bmp",
-  ".gif",
-  ".pdf",
-  ".mp4",
-  ".webm",
-  ".ogg",
-];
-
-export const clientLoader = async () => {
-  const token = localStorage.getItem("token");
-  return json({ token });
-};
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -40,111 +16,91 @@ export function ErrorBoundary() {
   );
 }
 
-function CodeEditor() {
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
-  const {
-    setPaths,
-    selectedPath,
-    modifiedFiles,
-    saveFileContent: saveNewFileContent,
-    discardChanges,
-  } = useFiles();
+function getLanguageFromPath(path: string): string {
+  const extension = path.split(".").pop()?.toLowerCase();
+  switch (extension) {
+    case "js":
+    case "jsx":
+      return "javascript";
+    case "ts":
+    case "tsx":
+      return "typescript";
+    case "py":
+      return "python";
+    case "html":
+      return "html";
+    case "css":
+      return "css";
+    case "json":
+      return "json";
+    case "md":
+      return "markdown";
+    case "yml":
+    case "yaml":
+      return "yaml";
+    case "sh":
+    case "bash":
+      return "bash";
+    case "dockerfile":
+      return "dockerfile";
+    case "rs":
+      return "rust";
+    case "go":
+      return "go";
+    case "java":
+      return "java";
+    case "cpp":
+    case "cc":
+    case "cxx":
+      return "cpp";
+    case "c":
+      return "c";
+    case "rb":
+      return "ruby";
+    case "php":
+      return "php";
+    case "sql":
+      return "sql";
+    default:
+      return "text";
+  }
+}
+
+function FileViewer() {
   const [fileExplorerIsOpen, setFileExplorerIsOpen] = React.useState(true);
-  const editorRef = React.useRef<editor.IStandaloneCodeEditor | null>(null);
+  const { selectedPath, files } = useFiles();
 
   const toggleFileExplorer = () => {
     setFileExplorerIsOpen((prev) => !prev);
-    editorRef.current?.layout({ width: 0, height: 0 });
   };
-
-  const handleEditorDidMount: EditorProps["onMount"] = (e, monaco) => {
-    editorRef.current = e;
-
-    monaco.editor.defineTheme("oh-dark", {
-      base: "vs-dark",
-      inherit: true,
-      rules: [],
-      colors: {
-        "editor.background": "#171717",
-      },
-    });
-    monaco.editor.setTheme("oh-dark");
-  };
-
-  const [errors, setErrors] = React.useState<{ getFiles: string | null }>({
-    getFiles: null,
-  });
-
-  const agentState = useSelector(
-    (state: RootState) => state.agent.curAgentState,
-  );
-
-  React.useEffect(() => {
-    if (curAgentState === AgentState.INIT) {
-      OpenHands.getFiles()
-        .then(setPaths)
-        .catch(() => {
-          setErrors({ getFiles: "Failed to retrieve files" });
-        });
-    }
-  }, [curAgentState]);
-
-  // Code editing is only allowed when the agent is paused, finished, or awaiting user input (server rules)
-  const isEditingAllowed = React.useMemo(
-    () =>
-      agentState === AgentState.PAUSED ||
-      agentState === AgentState.FINISHED ||
-      agentState === AgentState.AWAITING_USER_INPUT,
-    [agentState],
-  );
-
-  const handleSave = async () => {
-    if (selectedPath) {
-      const content = modifiedFiles[selectedPath];
-      if (content) {
-        try {
-          await OpenHands.saveFile(selectedPath, content);
-          saveNewFileContent(selectedPath);
-        } catch (error) {
-          toast.error("Failed to save file");
-        }
-      }
-    }
-  };
-
-  const handleDiscard = () => {
-    if (selectedPath) discardChanges(selectedPath);
-  };
-
-  const isAssetFileType = selectedPath
-    ? ASSET_FILE_TYPES.some((ext) => selectedPath.endsWith(ext))
-    : false;
 
   return (
     <div className="flex h-full bg-neutral-900 relative">
-      <FileExplorer
-        isOpen={fileExplorerIsOpen}
-        onToggle={toggleFileExplorer}
-        error={errors.getFiles}
-      />
-      <div className="w-full">
-        {selectedPath && !isAssetFileType && (
+      <FileExplorer isOpen={fileExplorerIsOpen} onToggle={toggleFileExplorer} />
+      <div className="w-full h-full flex flex-col">
+        {selectedPath && (
           <div className="flex w-full items-center justify-between self-end p-2">
             <span className="text-sm text-neutral-500">{selectedPath}</span>
-            <EditorActions
-              onSave={handleSave}
-              onDiscard={handleDiscard}
-              isDisabled={!isEditingAllowed || !modifiedFiles[selectedPath]}
-            />
           </div>
         )}
-        <CodeEditorComponent
-          onMount={handleEditorDidMount}
-          isReadOnly={!isEditingAllowed}
-        />
+        {selectedPath && files[selectedPath] && (
+          <div className="p-4 flex-1 overflow-auto">
+            <SyntaxHighlighter
+              language={getLanguageFromPath(selectedPath)}
+              style={vscDarkPlus}
+              customStyle={{
+                margin: 0,
+                background: "#171717",
+                fontSize: "0.875rem",
+              }}
+            >
+              {files[selectedPath]}
+            </SyntaxHighlighter>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-export default CodeEditor;
+export default FileViewer;

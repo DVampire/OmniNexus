@@ -5,7 +5,7 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-} from "@remix-run/react";
+} from "react-router";
 import "./tailwind.css";
 import "./index.css";
 import React from "react";
@@ -31,7 +31,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export const meta: MetaFunction = () => [
-  { title: "OmniNexus" },
+  { title: "OpenHands" },
   { name: "description", content: "Let's Start Building!" },
 ];
 

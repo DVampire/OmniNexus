@@ -1,6 +1,6 @@
 # Security
 
-Given the impressive capabilities of omninexus and similar coding agents, ensuring robust security measures is essential to prevent unintended actions or security breaches. The SecurityAnalyzer framework provides a structured approach to monitor and analyze agent actions for potential security risks.
+Given the impressive capabilities of OpenHands and similar coding agents, ensuring robust security measures is essential to prevent unintended actions or security breaches. The SecurityAnalyzer framework provides a structured approach to monitor and analyze agent actions for potential security risks.
 
 To enable this feature:
 * From the web interface
@@ -40,22 +40,22 @@ The `SecurityAnalyzer` class (analyzer.py) is an abstract base class designed to
 
 In conclusion, a concrete security analyzer should evaluate the risk of each event and act accordingly (e.g. auto-confirm, send Slack message, etc).
 
-For customization and decoupling from the omninexus core logic, the security analyzer can define its own API endpoints that can then be accessed from the frontend. These API endpoints need to be secured (do not allow more capabilities than the core logic
+For customization and decoupling from the OpenHands core logic, the security analyzer can define its own API endpoints that can then be accessed from the frontend. These API endpoints need to be secured (do not allow more capabilities than the core logic
 provides).
 
 ## How to implement your own Security Analyzer
 
-1. Create a submodule in [security](/omninexus/security/) with your analyzer's desired name
-    * Have your main class inherit from [SecurityAnalyzer](/omninexus/security/analyzer.py)
+1. Create a submodule in [security](/openhands/security/) with your analyzer's desired name
+    * Have your main class inherit from [SecurityAnalyzer](/openhands/security/analyzer.py)
     * Optional: define API endpoints for `/api/security/{path:path}` to manage settings,
-2. Add your analyzer class to the [options](/omninexus/security/options.py) to have it be visible from the frontend combobox
+2. Add your analyzer class to the [options](/openhands/security/options.py) to have it be visible from the frontend combobox
 3. Optional: implement your modal frontend (for when you click on the lock) in [security](/frontend/src/components/modals/security/) and add your component to [Security.tsx](/frontend/src/components/modals/security/Security.tsx)
 
 ## Implemented Security Analyzers
 
 ### Invariant
 
-It uses the [Invariant Analyzer](https://github.com/invariantlabs-ai/invariant) to analyze traces and detect potential issues with omninexus's workflow. It uses confirmation mode to ask for user confirmation on potentially risky actions.
+It uses the [Invariant Analyzer](https://github.com/invariantlabs-ai/invariant) to analyze traces and detect potential issues with OpenHands's workflow. It uses confirmation mode to ask for user confirmation on potentially risky actions.
 
 This allows the agent to run autonomously without fear that it will inadvertently compromise security or perform unintended actions that could be harmful.
 
@@ -65,9 +65,23 @@ Features:
     * potential secret leaks by the agent
     * security issues in Python code
     * malicious bash commands
+    * dangerous user tasks (browsing agent setting)
+    * harmful content generation (browsing agent setting)
 * Logs:
     * actions and their associated risk
-    * omninexus traces in JSON format
+    * OpenHands traces in JSON format
 * Run-time settings:
     * the [invariant policy](https://github.com/invariantlabs-ai/invariant?tab=readme-ov-file#policy-language)
     * acceptable risk threshold
+    * (Optional) check_browsing_alignment flag
+    * (Optional) guardrail_llm that assesses if the agent behaviour is safe
+
+Browsing Agent Safety:
+
+* Guardrail feature that uses the underlying LLM of the agent to:
+    * Examine the user's request and check if it is harmful.
+    * Examine the content entered by the agent in a textbox (argument of the “fill” browser action) and check if it is harmful.
+
+* If the guardrail evaluates either of the 2 conditions to be true, it emits a change_agent_state action and transforms the AgentState to ERROR. This stops the agent from proceeding further.
+
+* To enable this feature: In the InvariantAnalyzer object, set the check_browsing_alignment attribute to True and initialize the guardrail_llm attribute with an LLM object.

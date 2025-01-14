@@ -2,9 +2,11 @@ from omninexus.core.logger import omninexus_logger as logger
 from omninexus.events.action.action import Action
 from omninexus.events.action.empty import NullAction
 from omninexus.events.event import Event
-from omninexus.events.observation.commands import CmdOutputObservation
-from omninexus.events.observation.empty import NullObservation
-from omninexus.events.observation.observation import Observation
+from omninexus.events.observation import (
+    CmdOutputObservation,
+    NullObservation,
+    Observation,
+)
 
 
 def get_pairs_from_events(events: list[Event]) -> list[tuple[Action, Observation]]:

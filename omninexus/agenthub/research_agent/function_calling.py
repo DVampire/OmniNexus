@@ -5,28 +5,36 @@ This is similar to the functionality of `CodeActResponseParser`.
 
 import json
 
-from browsergym.core.action.highlevel import HighLevelActionSet
 from litellm import (
     ChatCompletionToolParam,
-    ChatCompletionToolParamFunctionChunk,
     ModelResponse,
 )
+
+from omninexus.core.exceptions import FunctionCallNotExistsError
+from omninexus.core.logger import omninexus_logger as logger
+from omninexus.events.action import (
+    Action,
+    AgentDelegateAction,
+    AgentFinishAction,
+    BrowseInteractiveAction,
+    BrowseURLAction,
+    CmdRunAction,
+    FileEditAction,
+    FileReadAction,
+    IPythonRunCellAction,
+    MessageAction,
+    RelevantResearchRetrievalAction,
+    IdeaGenerationAction,
+    ProjectAction,
+    LatexAction,
+    ReviewAction,
+)
+from omninexus.events.event import FileEditSource, FileReadSource
+from omninexus.events.tool import ToolCallMetadata
 
 from omninexus.agenthub.research_agent.modules.idea import (
     IdeaGenerationTool,
     RelevantResearchRetrievalTool,
-)
-from omninexus.agenthub.research_agent.modules.latex import (
-    LatexAbstractTool,
-    LatexConclusionTool,
-    LatexDesignTool,
-    LatexEmpiricalResultsTool,
-    LatexIntroductionTool,
-    LatexLimitationsAndFutureWorkTool,
-    LatexMainTool,
-    LatexMethodTool,
-    LatexRelatedWorkTool,
-    LatexScriptsTool,
 )
 from omninexus.agenthub.research_agent.modules.project import (
     ProjectConfigurationTool,
@@ -45,6 +53,18 @@ from omninexus.agenthub.research_agent.modules.project import (
     ProjectTransformTool,
     ProjectUtilsTool,
 )
+from omninexus.agenthub.research_agent.modules.latex import (
+    LatexAbstractTool,
+    LatexConclusionTool,
+    LatexDesignTool,
+    LatexEmpiricalResultsTool,
+    LatexIntroductionTool,
+    LatexLimitationsAndFutureWorkTool,
+    LatexMainTool,
+    LatexMethodTool,
+    LatexRelatedWorkTool,
+    LatexScriptsTool,
+)
 from omninexus.agenthub.research_agent.modules.review import ReviewTool
 from omninexus.agenthub.research_agent.tools import (
     BrowserTool,
@@ -55,24 +75,6 @@ from omninexus.agenthub.research_agent.tools import (
     StrReplaceEditorTool,
     WebReadTool,
 )
-from omninexus.core.logger import omninexus_logger as logger
-from omninexus.events.action import (
-    Action,
-    AgentDelegateAction,
-    AgentFinishAction,
-    BrowseInteractiveAction,
-    CmdRunAction,
-    FileEditAction,
-    IdeaGenerationAction,
-    IPythonRunCellAction,
-    LatexAction,
-    MessageAction,
-    ProjectAction,
-    RelevantResearchRetrievalAction,
-    ReviewAction
-)
-from omninexus.events.tool import ToolCallMetadata
-
 
 def combine_thought(action: Action, thought: str) -> Action:
     if not hasattr(action, 'thought'):
@@ -96,7 +98,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                 if msg['type'] == 'text':
                     thought += msg['text']
 
-        # Process each tool call to omninexus action
+        # Process each tool call to OpenHands action
         for i, tool_call in enumerate(assistant_msg.tool_calls):
             action: Action
             try:
@@ -125,7 +127,20 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                 logger.debug(
                     f'TOOL CALL: str_replace_editor -> file_editor with code: {code}'
                 )
-                action = IPythonRunCellAction(code=code, include_extra=False)
+
+                if arguments['command'] == 'view':
+                    action = FileReadAction(
+                        path=arguments['path'],
+                        translated_ipython_code=code,
+                        impl_source=FileReadSource.OH_ACI,
+                    )
+                else:
+                    action = FileEditAction(
+                        path=arguments['path'],
+                        content='',  # dummy value -- we don't need it
+                        translated_ipython_code=code,
+                        impl_source=FileEditSource.OH_ACI,
+                    )
             elif tool_call.function.name == 'browser':
                 action = BrowseInteractiveAction(browser_actions=arguments['code'])
             elif tool_call.function.name == 'relevant_research_retrieval':
@@ -140,8 +155,12 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                 action = LatexAction(**arguments)
             elif tool_call.function.name == 'review':
                 action = ReviewAction(**arguments)
+            elif tool_call.function.name == 'web_read':
+                action = BrowseURLAction(url=arguments['url'])
             else:
-                raise RuntimeError(f'Unknown tool call: {tool_call.function.name}')
+                raise FunctionCallNotExistsError(
+                    f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
+                )
 
             # We only add thought to the first action
             if i == 0:
@@ -164,11 +183,11 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
 
 
 def get_tools(
-    codeact_enable_browsing: bool = True,
-    codeact_enable_llm_editor: bool = True,
-    codeact_enable_jupyter: bool = True,
+    codeact_enable_browsing: bool = False,
+    codeact_enable_llm_editor: bool = False,
+    codeact_enable_jupyter: bool = False,
 ) -> list[ChatCompletionToolParam]:
-    tools = [FinishTool, CmdRunTool, StrReplaceEditorTool]
+    tools = [CmdRunTool, FinishTool]
 
     modules_idea = [
         RelevantResearchRetrievalTool,
@@ -212,9 +231,13 @@ def get_tools(
 
     tools = modules_idea + modules_project + modules_latex + modules_review + tools
 
-    tools.append(BrowserTool)
-    tools.append(WebReadTool)
-    tools.append(IPythonTool)
-    tools.append(LLMBasedFileEditTool)
-
+    if codeact_enable_browsing:
+        tools.append(WebReadTool)
+        tools.append(BrowserTool)
+    if codeact_enable_jupyter:
+        tools.append(IPythonTool)
+    if codeact_enable_llm_editor:
+        tools.append(LLMBasedFileEditTool)
+    else:
+        tools.append(StrReplaceEditorTool)
     return tools

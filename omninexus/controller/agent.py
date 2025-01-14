@@ -12,6 +12,9 @@ from omninexus.core.exceptions import (
 from omninexus.llm.llm import LLM
 from omninexus.runtime.plugins import PluginRequirement
 
+if TYPE_CHECKING:
+    from omninexus.utils.prompt import PromptManager
+
 
 class Agent(ABC):
     DEPRECATED = False
@@ -33,6 +36,7 @@ class Agent(ABC):
         self.llm = llm
         self.config = config
         self._complete = False
+        self.prompt_manager: 'PromptManager' | None = None
 
     @property
     def complete(self) -> bool:

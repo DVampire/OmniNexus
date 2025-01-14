@@ -1,8 +1,3 @@
-"""This file contains the function calling implementation for different actions.
-
-This is similar to the functionality of `CodeActResponseParser`.
-"""
-
 from browsergym.core.action.highlevel import HighLevelActionSet
 from litellm import (
     ChatCompletionToolParam,

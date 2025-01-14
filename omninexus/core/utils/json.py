@@ -6,6 +6,7 @@ from litellm.types.utils import ModelResponse
 
 from omninexus.core.exceptions import LLMResponseError
 from omninexus.events.event import Event
+from omninexus.events.observation import CmdOutputMetadata
 from omninexus.events.serialization import event_to_dict
 from omninexus.llm.metrics import Metrics
 
@@ -19,6 +20,8 @@ def my_default_encoder(obj):
     if isinstance(obj, Metrics):
         return obj.get()
     if isinstance(obj, ModelResponse):
+        return obj.model_dump()
+    if isinstance(obj, CmdOutputMetadata):
         return obj.model_dump()
     return json.JSONEncoder().default(obj)
 

@@ -1,12 +1,4 @@
-"""This file contains the function calling implementation for different actions.
-
-This is similar to the functionality of `CodeActResponseParser`.
-"""
-
-from litellm import (
-    ChatCompletionToolParam,
-    ChatCompletionToolParamFunctionChunk,
-)
+from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
 _IPYTHON_DESCRIPTION = """Run a cell of Python code in an IPython environment.
 * The assistant should define variables and import packages before using them.

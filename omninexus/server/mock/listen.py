@@ -48,15 +48,23 @@ def read_llm_models():
 @app.get('/api/options/agents')
 def read_llm_agents():
     return [
-        'ResearchAgent',
         'CodeActAgent',
-        'PlannerAgent',
     ]
 
 
 @app.get('/api/list-files')
 def refresh_files():
     return ['hello_world.py']
+
+
+@app.get('/api/options/config')
+def get_config():
+    return {'APP_MODE': 'oss'}
+
+
+@app.get('/api/options/security-analyzers')
+def get_analyzers():
+    return []
 
 
 if __name__ == '__main__':

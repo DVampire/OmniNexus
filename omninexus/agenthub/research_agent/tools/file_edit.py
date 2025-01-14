@@ -1,12 +1,4 @@
-"""This file contains the function calling implementation for different actions.
-
-This is similar to the functionality of `CodeActResponseParser`.
-"""
-
-from litellm import (
-    ChatCompletionToolParam,
-    ChatCompletionToolParamFunctionChunk,
-)
+from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
 _FILE_EDIT_DESCRIPTION = """Edit a file.
 * The assistant can edit files by specifying the file path and providing a draft of the new file content.
@@ -126,7 +118,7 @@ LLMBasedFileEditTool = ChatCompletionToolParam(
                     'type': 'string',
                     'description': 'The absolute path to the file to be edited.',
                 },
-                'new_content_draft': {
+                'content': {
                     'type': 'string',
                     'description': 'A draft of the new content for the file being edited. Note that the assistant may skip unchanged lines.',
                 },

@@ -12,6 +12,16 @@ class EventSource(str, Enum):
     ENVIRONMENT = 'environment'
 
 
+class FileEditSource(str, Enum):
+    LLM_BASED_EDIT = 'llm_based_edit'
+    OH_ACI = 'oh_aci'  # openhands-aci
+
+
+class FileReadSource(str, Enum):
+    OH_ACI = 'oh_aci'  # openhands-aci
+    DEFAULT = 'default'
+
+
 @dataclass
 class Event:
     @property
@@ -57,6 +67,13 @@ class Event:
     @timeout.setter
     def timeout(self, value: int | None) -> None:
         self._timeout = value
+        if value is not None and value > 600:
+            from omninexus.core.logger import omninexus_logger as logger
+
+            logger.warning(
+                'Timeout greater than 600 seconds may not be supported by '
+                'the runtime. Consider setting a lower timeout.'
+            )
 
         # Check if .blocking is an attribute of the event
         if hasattr(self, 'blocking'):

@@ -12,8 +12,9 @@ from omninexus.core.config import LLMConfig
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
+
+from litellm import ChatCompletionMessageToolCall, ModelInfo, PromptTokensDetails
 from litellm import Message as LiteLLMMessage
-from litellm import ModelInfo, PromptTokensDetails
 from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
@@ -24,6 +25,7 @@ from litellm.exceptions import (
     ServiceUnavailableError,
 )
 from litellm.types.utils import CostPerToken, ModelResponse, Usage
+from litellm.utils import create_pretrained_tokenizer
 
 from omninexus.core.exceptions import CloudFlareBlockageError
 from omninexus.core.logger import omninexus_logger as logger
@@ -65,6 +67,7 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'claude-3-5-sonnet',
     'claude-3-5-sonnet-20240620',
     'claude-3-5-sonnet-20241022',
+    'claude-3.5-haiku',
     'claude-3-5-haiku-20241022',
     'gpt-4o-mini',
     'gpt-4o',
@@ -98,7 +101,6 @@ class LLM(RetryMixin, DebugMixin):
         self.cost_metric_supported: bool = True
         self.config: LLMConfig = copy.deepcopy(config)
 
-        # litellm actually uses base Exception here for unknown model
         self.model_info: ModelInfo | None = None
 
         if self.config.log_completions:
@@ -108,41 +110,8 @@ class LLM(RetryMixin, DebugMixin):
                 )
             os.makedirs(self.config.log_completions_folder, exist_ok=True)
 
-        self._completion = partial(
-            litellm_completion,
-            model=self.config.model,
-            api_key=self.config.api_key,
-            base_url=self.config.base_url,
-            api_version=self.config.api_version,
-            custom_llm_provider=self.config.custom_llm_provider,
-            max_tokens=self.config.max_output_tokens,
-            timeout=self.config.timeout,
-            temperature=self.config.temperature,
-            top_p=self.config.top_p,
-            drop_params=self.config.drop_params,
-        )
-
-        if self.vision_is_active():
-            logger.debug('LLM: model has vision enabled')
-        if self.is_caching_prompt_active():
-            logger.debug('LLM: caching prompt enabled')
-        if self.is_function_calling_active():
-            logger.debug('LLM: model supports function calling')
-
-        self._completion = partial(
-            litellm_completion,
-            model=self.config.model,
-            api_key=self.config.api_key,
-            base_url=self.config.base_url,
-            api_version=self.config.api_version,
-            custom_llm_provider=self.config.custom_llm_provider,
-            max_tokens=self.config.max_output_tokens,
-            timeout=self.config.timeout,
-            temperature=self.config.temperature,
-            top_p=self.config.top_p,
-            drop_params=self.config.drop_params,
-        )
-
+        # call init_model_info to initialize config.max_output_tokens
+        # which is used in partial function
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             self.init_model_info()
@@ -152,6 +121,27 @@ class LLM(RetryMixin, DebugMixin):
             logger.debug('LLM: caching prompt enabled')
         if self.is_function_calling_active():
             logger.debug('LLM: model supports function calling')
+
+        # if using a custom tokenizer, make sure it's loaded and accessible in the format expected by litellm
+        if self.config.custom_tokenizer is not None:
+            self.tokenizer = create_pretrained_tokenizer(self.config.custom_tokenizer)
+        else:
+            self.tokenizer = None
+
+        # set up the completion function
+        self._completion = partial(
+            litellm_completion,
+            model=self.config.model,
+            api_key=self.config.api_key,
+            base_url=self.config.base_url,
+            api_version=self.config.api_version,
+            custom_llm_provider=self.config.custom_llm_provider,
+            max_tokens=self.config.max_output_tokens,
+            timeout=self.config.timeout,
+            temperature=self.config.temperature,
+            top_p=self.config.top_p,
+            drop_params=self.config.drop_params,
+        )
 
         self._completion_unwrapped = self._completion
 
@@ -215,9 +205,22 @@ class LLM(RetryMixin, DebugMixin):
                         'anthropic-beta': 'prompt-caching-2024-07-31',
                     }
 
+            # set litellm modify_params to the configured value
+            # True by default to allow litellm to do transformations like adding a default message, when a message is empty
+            # NOTE: this setting is global; unlike drop_params, it cannot be overridden in the litellm completion partial
+            litellm.modify_params = self.config.modify_params
+
             try:
+                # Record start time for latency measurement
+                start_time = time.time()
+
                 # we don't support streaming here, thus we get a ModelResponse
                 resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
+
+                # Calculate and record latency
+                latency = time.time() - start_time
+                response_id = resp.get('id', 'unknown')
+                self.metrics.add_response_latency(latency, response_id)
 
                 non_fncall_response = copy.deepcopy(resp)
                 if mock_function_calling:
@@ -236,6 +239,22 @@ class LLM(RetryMixin, DebugMixin):
                         )
                     resp.choices[0].message = fn_call_response_message
 
+                message_back: str = resp['choices'][0]['message']['content'] or ''
+                tool_calls: list[ChatCompletionMessageToolCall] = resp['choices'][0][
+                    'message'
+                ].get('tool_calls', [])
+                if tool_calls:
+                    for tool_call in tool_calls:
+                        fn_name = tool_call.function.name
+                        fn_args = tool_call.function.arguments
+                        message_back += f'\nFunction call: {fn_name}({fn_args})'
+
+                # log the LLM response
+                self.log_response(message_back)
+
+                # post-process the response first to calculate cost
+                cost = self._post_completion(resp)
+
                 # log for evals or other scripts that need the raw completion
                 if self.config.log_completions:
                     assert self.config.log_completions_folder is not None
@@ -245,30 +264,26 @@ class LLM(RetryMixin, DebugMixin):
                         f'{self.metrics.model_name.replace("/", "__")}-{time.time()}.json',
                     )
 
+                    # set up the dict to be logged
                     _d = {
                         'messages': messages,
                         'response': resp,
                         'args': args,
                         'kwargs': {k: v for k, v in kwargs.items() if k != 'messages'},
                         'timestamp': time.time(),
-                        'cost': self._completion_cost(resp),
+                        'cost': cost,
                     }
+
+                    # if non-native function calling, save messages/response separately
                     if mock_function_calling:
-                        # Overwrite response as non-fncall to be consistent with `messages``
+                        # Overwrite response as non-fncall to be consistent with messages
                         _d['response'] = non_fncall_response
+
                         # Save fncall_messages/response separately
                         _d['fncall_messages'] = original_fncall_messages
                         _d['fncall_response'] = resp
                     with open(log_file, 'w') as f:
                         f.write(json.dumps(_d))
-
-                message_back: str = resp['choices'][0]['message']['content']
-
-                # log the LLM response
-                self.log_response(message_back)
-
-                # post-process the response
-                self._post_completion(resp)
 
                 return resp
             except APIError as e:
@@ -340,7 +355,16 @@ class LLM(RetryMixin, DebugMixin):
             # noinspection PyBroadException
             except Exception:
                 pass
-        logger.debug(f'Model info: {self.model_info}')
+        from omninexus.core.utils import json
+
+        logger.debug(f'Model info: {json.dumps(self.model_info, indent=2)}')
+
+        if self.config.model.startswith('huggingface'):
+            # HF doesn't support the OpenAI default value for top_p (1)
+            logger.debug(
+                f'Setting top_p to 0.9 for Hugging Face model: {self.config.model}'
+            )
+            self.config.top_p = 0.9 if self.config.top_p == 1 else self.config.top_p
 
         # Set the max tokens in an LM-specific way if not set
         if self.config.max_input_tokens is None:
@@ -352,11 +376,11 @@ class LLM(RetryMixin, DebugMixin):
                 self.config.max_input_tokens = self.model_info['max_input_tokens']
             else:
                 # Safe fallback for any potentially viable model
-                self.config.max_input_tokens = 200000
+                self.config.max_input_tokens = 4096
 
         if self.config.max_output_tokens is None:
             # Safe default for any potentially viable model
-            self.config.max_output_tokens = 8192
+            self.config.max_output_tokens = 4096
             if self.model_info is not None:
                 # max_output_tokens has precedence over max_tokens, if either exists.
                 # litellm has models with both, one or none of these 2 parameters!
@@ -369,16 +393,16 @@ class LLM(RetryMixin, DebugMixin):
                 ):
                     self.config.max_output_tokens = self.model_info['max_tokens']
 
-    def vision_is_active(self):
+    def vision_is_active(self) -> bool:
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             return not self.config.disable_vision and self._supports_vision()
 
-    def _supports_vision(self):
+    def _supports_vision(self) -> bool:
         """Acquire from litellm if model is vision capable.
 
         Returns:
-            bool: True if model is vision capable. If model is not supported by litellm, it will return False.
+            bool: True if model is vision capable. Return False if model not supported by litellm.
         """
         # litellm.supports_vision currently returns False for 'openai/gpt-...' or 'anthropic/claude-...' (with prefixes)
         # but model_info will have the correct value for some reason.
@@ -410,15 +434,26 @@ class LLM(RetryMixin, DebugMixin):
         )
 
     def is_function_calling_active(self) -> bool:
-        # Check if model name is in supported list before checking model_info
+        # Check if model name is in our supported list
         model_name_supported = (
             self.config.model in FUNCTION_CALLING_SUPPORTED_MODELS
             or self.config.model.split('/')[-1] in FUNCTION_CALLING_SUPPORTED_MODELS
             or any(m in self.config.model for m in FUNCTION_CALLING_SUPPORTED_MODELS)
         )
-        return model_name_supported
 
-    def _post_completion(self, response: ModelResponse) -> None:
+        # Handle native_tool_calling user-defined configuration
+        if self.config.native_tool_calling is None:
+            return model_name_supported
+        elif self.config.native_tool_calling is False:
+            return False
+        else:
+            # try to enable native tool calling if supported by the model
+            supports_fn_call = litellm.supports_function_calling(
+                model=self.config.model
+            )
+            return supports_fn_call
+
+    def _post_completion(self, response: ModelResponse) -> float:
         """Post-process the completion response.
 
         Logs the cost and usage stats of the completion call.
@@ -435,6 +470,11 @@ class LLM(RetryMixin, DebugMixin):
                 cur_cost,
                 self.metrics.accumulated_cost,
             )
+
+        # Add latency to stats if available
+        if self.metrics.response_latencies:
+            latest_latency = self.metrics.response_latencies[-1]
+            stats += 'Response Latency: %.3f seconds\n' % latest_latency.latency
 
         usage: Usage | None = response.get('usage')
 
@@ -476,22 +516,48 @@ class LLM(RetryMixin, DebugMixin):
         if stats:
             logger.debug(stats)
 
-    def get_token_count(self, messages):
-        """Get the number of tokens in a list of messages.
+        return cur_cost
+
+    def get_token_count(self, messages: list[dict] | list[Message]) -> int:
+        """Get the number of tokens in a list of messages. Use dicts for better token counting.
 
         Args:
-            messages (list): A list of messages.
-
+            messages (list): A list of messages, either as a list of dicts or as a list of Message objects.
         Returns:
             int: The number of tokens.
         """
+        # attempt to convert Message objects to dicts, litellm expects dicts
+        if (
+            isinstance(messages, list)
+            and len(messages) > 0
+            and isinstance(messages[0], Message)
+        ):
+            logger.info(
+                'Message objects now include serialized tool calls in token counting'
+            )
+            messages = self.format_messages_for_llm(messages)  # type: ignore
+
+        # try to get the token count with the default litellm tokenizers
+        # or the custom tokenizer if set for this LLM configuration
         try:
-            return litellm.token_counter(model=self.config.model, messages=messages)
-        except Exception:
-            # TODO: this is to limit logspam in case token count is not supported
+            return litellm.token_counter(
+                model=self.config.model,
+                messages=messages,
+                custom_tokenizer=self.tokenizer,
+            )
+        except Exception as e:
+            # limit logspam in case token count is not supported
+            logger.error(
+                f'Error getting token count for\n model {self.config.model}\n{e}'
+                + (
+                    f'\ncustom_tokenizer: {self.config.custom_tokenizer}'
+                    if self.config.custom_tokenizer is not None
+                    else ''
+                )
+            )
             return 0
 
-    def _is_local(self):
+    def _is_local(self) -> bool:
         """Determines if the system is using a locally running LLM.
 
         Returns:
@@ -506,7 +572,7 @@ class LLM(RetryMixin, DebugMixin):
                 return True
         return False
 
-    def _completion_cost(self, response):
+    def _completion_cost(self, response) -> float:
         """Calculate the cost of a completion response based on the model.  Local models are treated as free.
         Add the current cost into total cost in metrics.
 
@@ -533,10 +599,30 @@ class LLM(RetryMixin, DebugMixin):
 
         try:
             # try directly get response_cost from response
-            cost = getattr(response, '_hidden_params', {}).get('response_cost', None)
+            _hidden_params = getattr(response, '_hidden_params', {})
+            cost = _hidden_params.get('response_cost', None)
             if cost is None:
+                cost = float(
+                    _hidden_params.get('additional_headers', {}).get(
+                        'llm_provider-x-litellm-response-cost', 0.0
+                    )
+                )
+
+            if cost is None:
+                try:
+                    cost = litellm_completion_cost(
+                        completion_response=response, **extra_kwargs
+                    )
+                except Exception as e:
+                    logger.error(f'Error getting cost from litellm: {e}')
+
+            if cost is None:
+                _model_name = '/'.join(self.config.model.split('/')[1:])
                 cost = litellm_completion_cost(
-                    completion_response=response, **extra_kwargs
+                    completion_response=response, model=_model_name, **extra_kwargs
+                )
+                logger.debug(
+                    f'Using fallback model name {_model_name} to get cost: {cost}'
                 )
             self.metrics.add_cost(cost)
             return cost
@@ -555,7 +641,7 @@ class LLM(RetryMixin, DebugMixin):
     def __repr__(self):
         return str(self)
 
-    def reset(self):
+    def reset(self) -> None:
         self.metrics.reset()
 
     def format_messages_for_llm(self, messages: Message | list[Message]) -> list[dict]:
@@ -566,6 +652,9 @@ class LLM(RetryMixin, DebugMixin):
         for message in messages:
             message.cache_enabled = self.is_caching_prompt_active()
             message.vision_enabled = self.vision_is_active()
+            message.function_calling_enabled = self.is_function_calling_active()
+            if 'deepseek' in self.config.model:
+                message.force_string_serializer = True
 
         # let pydantic handle the serialization
         return [message.model_dump() for message in messages]

@@ -76,6 +76,7 @@ class EmbeddingsLoader:
         Returns:
         - An instance of the selected embedding model or None.
         """
+
         if strategy in SUPPORTED_OLLAMA_EMBED_MODELS:
             from llama_index.embeddings.ollama import OllamaEmbedding
 
@@ -100,6 +101,12 @@ class EmbeddingsLoader:
                 api_key=llm_config.api_key,
                 azure_endpoint=llm_config.base_url,
                 api_version=llm_config.api_version,
+            )
+        elif strategy == 'voyage':
+            from llama_index.embeddings.voyageai import VoyageEmbedding
+
+            return VoyageEmbedding(
+                model_name='voyage-code-3',
             )
         elif (strategy is not None) and (strategy.lower() == 'none'):
             # TODO: this works but is not elegant enough. The incentive is when
@@ -151,6 +158,7 @@ def run_pipeline(
     embed_model: 'BaseEmbedding', documents: list['Document'], num_workers: int
 ) -> list['TextNode']:
     """Run a pipeline embedding documents."""
+
     # set up a pipeline with the transformations to make
     pipeline = IngestionPipeline(
         transformations=[

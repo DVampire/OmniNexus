@@ -9,7 +9,8 @@ from omninexus.storage.files import FileStore
 
 class GoogleCloudFileStore(FileStore):
     def __init__(self, bucket_name: Optional[str] = None) -> None:
-        """Create a new FileStore. If GOOGLE_APPLICATION_CREDENTIALS is defined in the
+        """
+        Create a new FileStore. If GOOGLE_APPLICATION_CREDENTIALS is defined in the
         environment it will be used for authentication. Otherwise access will be
         anonymous.
         """
@@ -20,7 +21,8 @@ class GoogleCloudFileStore(FileStore):
 
     def write(self, path: str, contents: str | bytes) -> None:
         blob = self.bucket.blob(path)
-        with blob.open('w') as f:
+        mode = 'wb' if isinstance(contents, bytes) else 'w'
+        with blob.open(mode) as f:
             f.write(contents)
 
     def read(self, path: str) -> str:

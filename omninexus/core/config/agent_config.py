@@ -1,5 +1,6 @@
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, field, fields
 
+from omninexus.core.config.condenser_config import CondenserConfig, NoOpCondenserConfig
 from omninexus.core.config.config_utils import get_field_info
 
 
@@ -18,10 +19,11 @@ class AgentConfig:
         llm_config: The name of the llm config to use. If specified, this will override global llm config.
         use_microagents: Whether to use microagents at all. Default is True.
         disabled_microagents: A list of microagents to disable. Default is None.
+        condenser: Configuration for the memory condenser. Default is NoOpCondenserConfig.
     """
 
     codeact_enable_browsing: bool = True
-    codeact_enable_llm_editor: bool = True
+    codeact_enable_llm_editor: bool = False
     codeact_enable_jupyter: bool = True
     micro_agent_name: str | None = None
     memory_enabled: bool = False
@@ -29,6 +31,7 @@ class AgentConfig:
     llm_config: str | None = None
     use_microagents: bool = True
     disabled_microagents: list[str] | None = None
+    condenser: CondenserConfig = field(default_factory=NoOpCondenserConfig)  # type: ignore
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""

@@ -32,11 +32,17 @@ class SandboxConfig:
         browsergym_eval_env: The BrowserGym environment to use for evaluation.
             Default is None for general purpose browsing. Check evaluation/miniwob and evaluation/webarena for examples.
         platform: The platform on which the image should be built. Default is None.
+        remote_runtime_resource_factor: Factor to scale the resource allocation for remote runtime.
+            Must be one of [1, 2, 4, 8]. Will only be used if the runtime is remote.
+        enable_gpu: Whether to enable GPU.
+        docker_runtime_kwargs: Additional keyword arguments to pass to the Docker runtime when running containers.
+            This should be a JSON string that will be parsed into a dictionary.
     """
 
     remote_runtime_api_url: str = 'http://localhost:8000'
     local_runtime_url: str = 'http://localhost'
     keep_runtime_alive: bool = True
+    rm_all_containers: bool = False
     api_key: str | None = None
     base_container_image: str = 'nikolaik/python-nodejs:python3.12-nodejs22'  # default to nikolaik/python-nodejs:python3.12-nodejs22 for eventstream runtime
     runtime_container_image: str | None = None
@@ -44,15 +50,20 @@ class SandboxConfig:
     timeout: int = 120
     remote_runtime_init_timeout: int = 180
     enable_auto_lint: bool = (
-        False  # once enabled, omninexus would lint files after editing
+        False  # once enabled, OpenHands would lint files after editing
     )
     use_host_network: bool = False
+    runtime_extra_build_args: list[str] | None = None
     initialize_plugins: bool = True
     force_rebuild_runtime: bool = False
     runtime_extra_deps: str | None = None
     runtime_startup_env_vars: dict[str, str] = field(default_factory=dict)
     browsergym_eval_env: str | None = None
     platform: str | None = None
+    close_delay: int = 900
+    remote_runtime_resource_factor: int = 1
+    enable_gpu: bool = False
+    docker_runtime_kwargs: str | None = None
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""

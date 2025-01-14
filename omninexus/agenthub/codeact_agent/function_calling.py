@@ -12,23 +12,26 @@ from litellm import (
     ModelResponse,
 )
 
+from omninexus.core.exceptions import FunctionCallNotExistsError
 from omninexus.core.logger import omninexus_logger as logger
 from omninexus.events.action import (
     Action,
     AgentDelegateAction,
     AgentFinishAction,
     BrowseInteractiveAction,
+    BrowseURLAction,
     CmdRunAction,
     FileEditAction,
+    FileReadAction,
     IPythonRunCellAction,
     MessageAction,
 )
+from omninexus.events.event import FileEditSource, FileReadSource
 from omninexus.events.tool import ToolCallMetadata
 
 _BASH_DESCRIPTION = """Execute a bash command in the terminal.
 * Long running commands: For commands that may run indefinitely, it should be run in the background and the output should be redirected to a file, e.g. command = `python3 app.py > server.log 2>&1 &`.
-* Interactive: If a bash command returns exit code `-1`, this means the process is not yet finished. The assistant must then send a second call to terminal with an empty `command` (which will retrieve any additional logs), or it can send additional text (set `command` to the text) to STDIN of the running process, or it can send command=`ctrl+c` to interrupt the process.
-* Timeout: If a command execution result says "Command timed out. Sending SIGINT to the process", the assistant should retry running the command in the background.
+* Interactive: If a bash command returns exit code `-1`, this means the process is not yet finished. The assistant must then send a second call to terminal with an empty `command` (which will retrieve any additional logs), or it can send additional text (set `command` to the text) to STDIN of the running process, or it can send command like `C-c` (Ctrl+C) to interrupt the process.
 """
 
 CmdRunTool = ChatCompletionToolParam(
@@ -41,7 +44,7 @@ CmdRunTool = ChatCompletionToolParam(
             'properties': {
                 'command': {
                     'type': 'string',
-                    'description': 'The bash command to execute. Can be empty to view additional logs when previous exit code is `-1`. Can be `ctrl+c` to interrupt the currently running process.',
+                    'description': 'The bash command to execute. Can be empty string to view additional logs when previous exit code is `-1`. Can be `C-c` (Ctrl+C) to interrupt the currently running process.',
                 },
             },
             'required': ['command'],
@@ -190,7 +193,7 @@ LLMBasedFileEditTool = ChatCompletionToolParam(
                     'type': 'string',
                     'description': 'The absolute path to the file to be edited.',
                 },
-                'new_content_draft': {
+                'content': {
                     'type': 'string',
                     'description': 'A draft of the new content for the file being edited. Note that the assistant may skip unchanged lines.',
                 },
@@ -265,6 +268,30 @@ StrReplaceEditorTool = ChatCompletionToolParam(
     ),
 )
 
+
+_WEB_DESCRIPTION = """Read (convert to markdown) content from a webpage. You should prefer using the `web_read` tool over the `browser` tool, but do use the `browser` tool if you need to interact with a webpage (e.g., click a button, fill out a form, etc.).
+
+You may use the `web_read` tool to read content from a webpage, and even search the webpage content using a Google search query (e.g., url=`https://www.google.com/search?q=YOUR_QUERY`).
+"""
+
+WebReadTool = ChatCompletionToolParam(
+    type='function',
+    function=ChatCompletionToolParamFunctionChunk(
+        name='web_read',
+        description=_WEB_DESCRIPTION,
+        parameters={
+            'type': 'object',
+            'properties': {
+                'url': {
+                    'type': 'string',
+                    'description': 'The URL of the webpage to read. You can also use a Google search query here (e.g., `https://www.google.com/search?q=YOUR_QUERY`).',
+                }
+            },
+            'required': ['url'],
+        },
+    ),
+)
+
 # from browsergym/core/action/highlevel.py
 _browser_action_space = HighLevelActionSet(
     subsets=['bid', 'nav'],
@@ -273,7 +300,7 @@ _browser_action_space = HighLevelActionSet(
 )
 
 
-_BROWSER_DESCRIPTION = """Interact with the browser using Python code.
+_BROWSER_DESCRIPTION = """Interact with the browser using Python code. Use it ONLY when you need to interact with a webpage.
 
 See the description of "code" parameter for more details.
 
@@ -451,7 +478,7 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                 if msg['type'] == 'text':
                     thought += msg['text']
 
-        # Process each tool call to omninexus action
+        # Process each tool call to OpenHands action
         for i, tool_call in enumerate(assistant_msg.tool_calls):
             action: Action
             try:
@@ -480,11 +507,28 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                 logger.debug(
                     f'TOOL CALL: str_replace_editor -> file_editor with code: {code}'
                 )
-                action = IPythonRunCellAction(code=code, include_extra=False)
+
+                if arguments['command'] == 'view':
+                    action = FileReadAction(
+                        path=arguments['path'],
+                        translated_ipython_code=code,
+                        impl_source=FileReadSource.OH_ACI,
+                    )
+                else:
+                    action = FileEditAction(
+                        path=arguments['path'],
+                        content='',  # dummy value -- we don't need it
+                        translated_ipython_code=code,
+                        impl_source=FileEditSource.OH_ACI,
+                    )
             elif tool_call.function.name == 'browser':
                 action = BrowseInteractiveAction(browser_actions=arguments['code'])
+            elif tool_call.function.name == 'web_read':
+                action = BrowseURLAction(url=arguments['url'])
             else:
-                raise RuntimeError(f'Unknown tool call: {tool_call.function.name}')
+                raise FunctionCallNotExistsError(
+                    f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
+                )
 
             # We only add thought to the first action
             if i == 0:
@@ -513,6 +557,7 @@ def get_tools(
 ) -> list[ChatCompletionToolParam]:
     tools = [CmdRunTool, FinishTool]
     if codeact_enable_browsing:
+        tools.append(WebReadTool)
         tools.append(BrowserTool)
     if codeact_enable_jupyter:
         tools.append(IPythonTool)

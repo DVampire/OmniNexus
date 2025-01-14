@@ -1,6 +1,10 @@
-from omninexus.events.observation.agent import AgentStateChangedObservation
+from omninexus.events.observation.agent import (
+    AgentCondensationObservation,
+    AgentStateChangedObservation,
+)
 from omninexus.events.observation.browse import BrowserOutputObservation
 from omninexus.events.observation.commands import (
+    CmdOutputMetadata,
     CmdOutputObservation,
     IPythonRunCellObservation,
 )
@@ -12,21 +16,22 @@ from omninexus.events.observation.files import (
     FileReadObservation,
     FileWriteObservation,
 )
-from omninexus.events.observation.modules import (
-    IdeaGenerationObservation,
-    LatexObservation,
-    ProjectObservation,
-    RelevantResearchRetrievalOutputObservation,
-    ReviewObservation,
-)
 from omninexus.events.observation.observation import Observation
 from omninexus.events.observation.reject import UserRejectObservation
 from omninexus.events.observation.success import SuccessObservation
+from omninexus.events.observation.modules import (
+    RelevantResearchRetrievalOutputObservation,
+    IdeaGenerationObservation,
+    ProjectObservation,
+    LatexObservation,
+    ReviewObservation,
+)
 
 __all__ = [
     'Observation',
     'NullObservation',
     'CmdOutputObservation',
+    'CmdOutputMetadata',
     'IPythonRunCellObservation',
     'BrowserOutputObservation',
     'FileReadObservation',
@@ -37,9 +42,10 @@ __all__ = [
     'AgentDelegateObservation',
     'SuccessObservation',
     'UserRejectObservation',
-    'ProjectObservation',
+    'AgentCondensationObservation',
     'RelevantResearchRetrievalOutputObservation',
     'IdeaGenerationObservation',
+    'ProjectObservation',
     'LatexObservation',
     'ReviewObservation',
 ]
